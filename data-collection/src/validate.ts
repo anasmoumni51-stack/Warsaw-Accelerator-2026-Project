@@ -11,18 +11,28 @@ const PRICE_MAP: Record<string, string> = {
   PRICE_LEVEL_VERY_EXPENSIVE: "premium",
 };
 
+// Core salon types — only businesses that match these are kept
+const SALON_TYPES = new Set([
+  "hair_salon",
+  "hair_care",
+  "beauty_salon",
+  "nail_salon",
+  "skin_care_clinic",
+  "barber_shop",
+  "beautician",
+  "makeup_artist",
+]);
+
 // Google types → service labels
 const SERVICE_MAP: Record<string, string> = {
   hair_care: "Hair Styling",
   hair_salon: "Hair Styling",
   beauty_salon: "Beauty Treatment",
   nail_salon: "Nail Care",
-  spa: "Spa & Wellness",
+  skin_care_clinic: "Skin Care",
   barber_shop: "Barber",
-  massage: "Massage",
-  skin_care: "Skin Care",
-  eyebrow_threading: "Eyebrow Threading",
-  eyelash_salon: "Eyelash Extensions",
+  beautician: "Beauty Treatment",
+  makeup_artist: "Makeup",
 };
 
 function normalize(str: string): string {
@@ -120,10 +130,19 @@ function countFields(place: RawPlace): number {
   return count;
 }
 
+function isSalon(types: string[] | undefined, name: string): boolean {
+  if (types && types.some((t) => SALON_TYPES.has(t))) return true;
+  // Fallback: keep if name contains salon-related keywords (Google miscategorized)
+  const lower = name.toLowerCase();
+  const keywords = ["fryzjer", "salon", "hair", "beauty", "nails", "barber", "kosmetycz"];
+  return keywords.some((kw) => lower.includes(kw));
+}
+
 function transform(place: RawPlace): CleanSalon | null {
   const name = place.displayName?.text?.trim();
   const address = place.formattedAddress?.trim();
   if (!name || !address) return null;
+  if (!isSalon(place.types, name)) return null;
 
   const loc = place.location;
   const lat = loc?.latitude ?? 0;

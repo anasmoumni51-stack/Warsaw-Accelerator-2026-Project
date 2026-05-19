@@ -12,16 +12,30 @@ const ENDPOINT = "https://places.googleapis.com/v1/places:searchText";
 const FIELD_MASK =
   "places.id,places.displayName,places.formattedAddress,places.internationalPhoneNumber,places.rating,places.userRatingCount,places.websiteUri,places.types,places.location,places.priceLevel,nextPageToken";
 
-// Queries to cover different salon types and Warsaw districts
+// Queries simulating real user searches — English + Polish, generic + specific
 const QUERIES = [
-  "hair salon Warsaw Poland",
-  "beauty salon Warsaw Poland",
+  // Generic salon searches (English)
+  "hair salon Warsaw",
+  "beauty salon Warsaw",
+  "nail salon Warsaw",
+  "barber shop Warsaw",
+  // Generic salon searches (Polish)
   "fryzjer Warszawa",
+  "salon fryzjerski Warszawa",
   "salon urody Warszawa",
-  "barber shop Warsaw Poland",
+  "gabinet kosmetyczny Warszawa",
   "kosmetyczka Warszawa",
-  "nail salon Warsaw Poland",
-  "spa Warsaw Poland",
+  // Specific service searches
+  "manicure Warszawa",
+  "pedicure Warszawa",
+  "henna brwi Warszawa",
+  "przedłużanie rzęs Warszawa",
+  "depilacja laserowa Warszawa",
+  // District-specific searches
+  "fryzjer Mokotów",
+  "fryzjer Ursynów",
+  "fryzjer Wola",
+  "fryzjer Praga Warszawa",
 ];
 
 async function searchPage(
