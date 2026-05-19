@@ -13,7 +13,9 @@ const CREATE_TABLE = `
 CREATE TABLE IF NOT EXISTS salons (
   id            SERIAL PRIMARY KEY,
   name          VARCHAR(255) NOT NULL,
+  name_norm     VARCHAR(255) NOT NULL,
   address       VARCHAR(500) NOT NULL,
+  address_norm  VARCHAR(500) NOT NULL,
   district      VARCHAR(100) NOT NULL,
   phone         VARCHAR(30),
   website       VARCHAR(500),
@@ -25,17 +27,20 @@ CREATE TABLE IF NOT EXISTS salons (
   lng           DECIMAL(9,6),
   created_at    TIMESTAMP DEFAULT NOW(),
   updated_at    TIMESTAMP DEFAULT NOW(),
-
-  UNIQUE (LOWER(TRIM(name)), LOWER(TRIM(address)))
+  UNIQUE (name_norm, address_norm)
 );
 `;
 
 const INSERT_SALON = `
-INSERT INTO salons (name, address, district, phone, website, services, price_range, rating, review_count, lat, lng)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-ON CONFLICT (LOWER(TRIM(name)), LOWER(TRIM(address)))
+INSERT INTO salons (name, name_norm, address, address_norm, district, phone, website, services, price_range, rating, review_count, lat, lng)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+ON CONFLICT (name_norm, address_norm)
 DO NOTHING;
 `;
+
+function normalize(str: string): string {
+  return str.trim().toLowerCase().replace(/\s+/g, " ");
+}
 
 async function seed() {
   console.log("Reading clean-salons.json...");
@@ -50,7 +55,6 @@ async function seed() {
   });
   await client.connect();
 
-  // Create table if not exists
   await client.query(CREATE_TABLE);
   console.log("Table 'salons' ready.\n");
 
@@ -60,7 +64,9 @@ async function seed() {
   for (const salon of salons) {
     const result = await client.query(INSERT_SALON, [
       salon.name,
+      normalize(salon.name),
       salon.address,
+      normalize(salon.address),
       salon.district,
       salon.phone,
       salon.website,
