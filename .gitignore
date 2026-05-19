@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+*.DS_Store
+
+# Data collection outputs (generated files)
+data-collection/raw-salons.json
+data-collection/clean-salons.json
+
+# Internals (personal notes)
+internals/
