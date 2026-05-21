@@ -16,48 +16,35 @@ async function testDb() {
 
   try {
     await client.connect();
-    console.log("Connected to database");
+    console.log("Connected to salon_db");
 
-    // Check if salons table exists
-    const tableCheck = await client.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables
-        WHERE table_name = 'salons'
-      );
-    `);
+    const tableCheck = await client.query(
+      `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'salons')`
+    );
     const tableExists = tableCheck.rows[0].exists;
-    console.log(`Table 'salons' exists: ${tableExists}`);
 
     if (tableExists) {
-      // Count rows
       const count = await client.query("SELECT COUNT(*) FROM salons");
-      console.log(`Rows in salons: ${count.rows[0].count}`);
+      console.log(`Rows: ${count.rows[0].count}`);
 
-      // Show columns
-      const columns = await client.query(`
-        SELECT column_name, data_type, is_nullable
-        FROM information_schema.columns
-        WHERE table_name = 'salons'
-        ORDER BY ordinal_position;
+      console.log("\nSample data:");
+      const sample = await client.query(`
+        SELECT *
+        FROM salons s
+        JOIN salon_services ss ON s.id = ss.salon_id
+        JOIN services sv ON ss.service_id = sv.id
+        ORDER BY s.id
+        OFFSET 0 LIMIT 5
       `);
-      console.log("\nColumns:");
-      for (const col of columns.rows) {
-        console.log(`  ${col.column_name} — ${col.data_type} (nullable: ${col.is_nullable})`);
-      }
 
-      // Show sample row if any exist
-      if (parseInt(count.rows[0].count) > 0) {
-        const sample = await client.query("SELECT * FROM salons LIMIT 2");
-        console.log("\nSample rows:");
-        for (const row of sample.rows) {
-          console.log(row);
-        }
+      for (const row of sample.rows) {
+        console.log(row);
       }
     }
 
-    console.log("\nDatabase test passed.");
+    console.log("\nDone.");
   } catch (err) {
-    console.error("Database test failed:", err);
+    console.error("Failed:", err);
     process.exit(1);
   } finally {
     await client.end();

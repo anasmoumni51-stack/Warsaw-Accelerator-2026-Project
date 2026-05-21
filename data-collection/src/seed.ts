@@ -9,33 +9,30 @@ if (!DATABASE_URL) {
   process.exit(1);
 }
 
-const CREATE_TABLE = `
-CREATE TABLE IF NOT EXISTS salons (
-  id            SERIAL PRIMARY KEY,
-  name          VARCHAR(255) NOT NULL,
-  name_norm     VARCHAR(255) NOT NULL,
-  address       VARCHAR(500) NOT NULL,
-  address_norm  VARCHAR(500) NOT NULL,
-  district      VARCHAR(100) NOT NULL,
-  phone         VARCHAR(30),
-  website       VARCHAR(500),
-  services      TEXT[],
-  price_range   VARCHAR(20),
-  rating        DECIMAL(2,1),
-  review_count  INTEGER DEFAULT 0,
-  lat           DECIMAL(9,6),
-  lng           DECIMAL(9,6),
-  created_at    TIMESTAMP DEFAULT NOW(),
-  updated_at    TIMESTAMP DEFAULT NOW(),
-  UNIQUE (name_norm, address_norm)
-);
-`;
+// Read schema from V1_Schema.sql and add IF NOT EXISTS for idempotency
+const schema = readFileSync("src/db_migrations/V1_Schema.sql", "utf-8");
+const CREATE_TABLES = schema.replace(/CREATE TABLE/g, "CREATE TABLE IF NOT EXISTS");
 
 const INSERT_SALON = `
-INSERT INTO salons (name, name_norm, address, address_norm, district, phone, website, services, price_range, rating, review_count, lat, lng)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+INSERT INTO salons (name, name_norm, address, address_norm, district, phone, website, rating, review_count)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 ON CONFLICT (name_norm, address_norm)
-DO NOTHING;
+DO NOTHING
+RETURNING id;
+`;
+
+const UPSERT_SERVICE = `
+INSERT INTO services (name)
+VALUES ($1)
+ON CONFLICT (name)
+DO UPDATE SET name = EXCLUDED.name
+RETURNING id;
+`;
+
+const INSERT_SALON_SERVICE = `
+INSERT INTO salon_services (salon_id, service_id)
+VALUES ($1, $2)
+ON CONFLICT DO NOTHING;
 `;
 
 function normalize(str: string): string {
@@ -43,9 +40,9 @@ function normalize(str: string): string {
 }
 
 async function seed() {
-  console.log("Reading clean-salons.json...");
+  console.log("Reading output/clean-salons.json...");
   const salons: CleanSalon[] = JSON.parse(
-    readFileSync("clean-salons.json", "utf-8")
+    readFileSync("output/clean-salons.json", "utf-8")
   );
   console.log(`Found ${salons.length} salons to seed.\n`);
 
@@ -55,8 +52,12 @@ async function seed() {
   });
   await client.connect();
 
-  await client.query(CREATE_TABLE);
-  console.log("Table 'salons' ready.\n");
+  // Create tables if not exist (idempotent)
+  await client.query(CREATE_TABLES);
+  console.log("Tables ready.\n");
+
+  // Cache service name → id to avoid repeated lookups
+  const serviceCache = new Map<string, number>();
 
   let inserted = 0;
   let skipped = 0;
@@ -70,27 +71,45 @@ async function seed() {
       salon.district,
       salon.phone,
       salon.website,
-      salon.services,
-      salon.priceRange,
       salon.rating,
       salon.reviewCount,
-      salon.lat,
-      salon.lng,
     ]);
-    if (result.rowCount && result.rowCount > 0) {
-      inserted++;
-    } else {
+
+    if (!result.rowCount || result.rowCount === 0) {
       skipped++;
+      continue;
+    }
+
+    inserted++;
+    const salonId = result.rows[0].id;
+
+    // Insert services and create relationships
+    for (const serviceName of salon.services) {
+      let serviceId: number;
+
+      if (serviceCache.has(serviceName)) {
+        serviceId = serviceCache.get(serviceName)!;
+      } else {
+        const serviceResult = await client.query(UPSERT_SERVICE, [serviceName]);
+        serviceId = serviceResult.rows[0].id;
+        serviceCache.set(serviceName, serviceId);
+      }
+
+      await client.query(INSERT_SALON_SERVICE, [salonId, serviceId]);
     }
   }
 
-  const total = await client.query("SELECT COUNT(*) FROM salons");
+  const totalSalons = await client.query("SELECT COUNT(*) FROM salons");
+  const totalServices = await client.query("SELECT COUNT(*) FROM services");
+  const totalRelations = await client.query("SELECT COUNT(*) FROM salon_services");
   await client.end();
 
   console.log("Seed complete:");
-  console.log(`  Inserted: ${inserted} new salons`);
-  console.log(`  Skipped:  ${skipped} (already in database)`);
-  console.log(`  Total:    ${total.rows[0].count} salons in database`);
+  console.log(`  Inserted:    ${inserted} new salons`);
+  console.log(`  Skipped:     ${skipped} (already in database)`);
+  console.log(`  Total:       ${totalSalons.rows[0].count} salons`);
+  console.log(`  Services:    ${totalServices.rows[0].count} unique services`);
+  console.log(`  Relations:   ${totalRelations.rows[0].count} salon-service links`);
 }
 
 seed().catch((err) => {
