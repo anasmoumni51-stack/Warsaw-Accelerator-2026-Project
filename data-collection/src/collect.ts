@@ -112,8 +112,8 @@ async function collect() {
   console.log(`\nCollection complete.`);
   console.log(`Total unique salons: ${unique.length}`);
 
-  writeFileSync("raw-salons.json", JSON.stringify(unique, null, 2));
-  console.log(`Saved to raw-salons.json`);
+  writeFileSync("output/raw-salons.json", JSON.stringify(unique, null, 2));
+  console.log(`Saved to output/raw-salons.json`);
 }
 
 collect().catch((err) => {
