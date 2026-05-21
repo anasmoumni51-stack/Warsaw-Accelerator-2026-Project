@@ -25,7 +25,6 @@ export interface CleanSalon {
   phone: string | null;
   website: string | null;
   services: string[];
-  priceRange: string | null;
   rating: number | null;
   reviewCount: number;
   lat: number;

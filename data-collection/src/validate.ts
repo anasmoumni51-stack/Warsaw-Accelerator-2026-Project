@@ -2,15 +2,6 @@ import { readFileSync, writeFileSync } from "node:fs";
 import type { RawPlace, CleanSalon } from "./types.js";
 import { getDistrict } from "./districts.js";
 
-// Google price level enum → human-readable
-const PRICE_MAP: Record<string, string> = {
-  PRICE_LEVEL_FREE: "budget",
-  PRICE_LEVEL_INEXPENSIVE: "budget",
-  PRICE_LEVEL_MODERATE: "moderate",
-  PRICE_LEVEL_EXPENSIVE: "expensive",
-  PRICE_LEVEL_VERY_EXPENSIVE: "premium",
-};
-
 // Core salon types — only businesses that match these are kept
 const SALON_TYPES = new Set([
   "hair_salon",
@@ -35,11 +26,11 @@ const SERVICE_MAP: Record<string, string> = {
   makeup_artist: "Makeup",
 };
 
-function normalize(str: string): string {
+export function normalize(str: string): string {
   return str.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function normalizePhone(raw: string | undefined): string | null {
+export function normalizePhone(raw: string | undefined): string | null {
   if (!raw) return null;
   const digits = raw.replace(/\D/g, "");
   if (digits.length < 9) return null;
@@ -53,7 +44,7 @@ function normalizePhone(raw: string | undefined): string | null {
   return `+${digits}`;
 }
 
-function normalizeWebsite(raw: string | undefined): string | null {
+export function normalizeWebsite(raw: string | undefined): string | null {
   if (!raw) return null;
   let url = raw.trim();
   if (!url.startsWith("http")) {
@@ -67,18 +58,13 @@ function normalizeWebsite(raw: string | undefined): string | null {
   }
 }
 
-function clampRating(rating: number | undefined): number | null {
+export function clampRating(rating: number | undefined): number | null {
   if (rating === undefined || rating === null) return null;
   if (rating < 0 || rating > 5) return null;
   return Math.round(rating * 10) / 10;
 }
 
-function mapPriceLevel(level: string | undefined): string | null {
-  if (!level) return null;
-  return PRICE_MAP[level] ?? null;
-}
-
-function mapServices(types: string[] | undefined): string[] {
+export function mapServices(types: string[] | undefined): string[] {
   if (!types) return [];
   const services: string[] = [];
   for (const type of types) {
@@ -90,7 +76,7 @@ function mapServices(types: string[] | undefined): string[] {
   return services;
 }
 
-function dedup(places: RawPlace[]): RawPlace[] {
+export function dedup(places: RawPlace[]): RawPlace[] {
   const byKey = new Map<string, RawPlace>();
 
   for (const place of places) {
@@ -130,7 +116,7 @@ function countFields(place: RawPlace): number {
   return count;
 }
 
-function isSalon(types: string[] | undefined, name: string): boolean {
+export function isSalon(types: string[] | undefined, name: string): boolean {
   if (types && types.some((t) => SALON_TYPES.has(t))) return true;
   // Fallback: keep if name contains salon-related keywords (Google miscategorized)
   const lower = name.toLowerCase();
@@ -155,7 +141,6 @@ function transform(place: RawPlace): CleanSalon | null {
     phone: normalizePhone(place.internationalPhoneNumber),
     website: normalizeWebsite(place.websiteUri),
     services: mapServices(place.types),
-    priceRange: mapPriceLevel(place.priceLevel),
     rating: clampRating(place.rating),
     reviewCount: place.userRatingCount ?? 0,
     lat,
@@ -164,8 +149,8 @@ function transform(place: RawPlace): CleanSalon | null {
 }
 
 function validate() {
-  console.log("Reading raw-salons.json...");
-  const raw: RawPlace[] = JSON.parse(readFileSync("raw-salons.json", "utf-8"));
+  console.log("Reading output/raw-salons.json...");
+  const raw: RawPlace[] = JSON.parse(readFileSync("output/raw-salons.json", "utf-8"));
   console.log(`Raw records: ${raw.length}`);
 
   console.log("\nDeduplicating...");
@@ -206,8 +191,8 @@ function validate() {
   console.log(`  Website: ${withWebsite}/${cleaned.length}`);
   console.log(`  Rating: ${withRating}/${cleaned.length}`);
 
-  writeFileSync("clean-salons.json", JSON.stringify(cleaned, null, 2));
-  console.log(`\nSaved to clean-salons.json`);
+  writeFileSync("output/clean-salons.json", JSON.stringify(cleaned, null, 2));
+  console.log(`\nSaved to output/clean-salons.json`);
 }
 
 validate();
