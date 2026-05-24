@@ -29,12 +29,7 @@ async function testDb() {
 
       console.log("\nSample data:");
       const sample = await client.query(`
-        SELECT *
-        FROM salons s
-        JOIN salon_services ss ON s.id = ss.salon_id
-        JOIN services sv ON ss.service_id = sv.id
-        ORDER BY s.id
-        OFFSET 0 LIMIT 5
+        SELECT * FROM salons ORDER BY id LIMIT 5
       `);
 
       for (const row of sample.rows) {
