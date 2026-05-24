@@ -1,6 +1,7 @@
 import "dotenv/config";
-import { writeFileSync } from "node:fs";
-import type { RawPlace, PlacesApiResponse } from "./types.js";
+import { writeFileSync, mkdirSync } from "node:fs";
+import type { RawPlace, PlacesApiResponse } from "./utils/types.js";
+import { QUERIES } from "./utils/queries.js";
 
 const API_KEY = process.env.GOOGLE_API_KEY;
 if (!API_KEY) {
@@ -10,33 +11,7 @@ if (!API_KEY) {
 
 const ENDPOINT = "https://places.googleapis.com/v1/places:searchText";
 const FIELD_MASK =
-  "places.id,places.displayName,places.formattedAddress,places.internationalPhoneNumber,places.rating,places.userRatingCount,places.websiteUri,places.types,places.location,places.priceLevel,nextPageToken";
-
-// Queries simulating real user searches — English + Polish, generic + specific
-const QUERIES = [
-  // Generic salon searches (English)
-  "hair salon Warsaw",
-  "beauty salon Warsaw",
-  "nail salon Warsaw",
-  "barber shop Warsaw",
-  // Generic salon searches (Polish)
-  "fryzjer Warszawa",
-  "salon fryzjerski Warszawa",
-  "salon urody Warszawa",
-  "gabinet kosmetyczny Warszawa",
-  "kosmetyczka Warszawa",
-  // Specific service searches
-  "manicure Warszawa",
-  "pedicure Warszawa",
-  "henna brwi Warszawa",
-  "przedłużanie rzęs Warszawa",
-  "depilacja laserowa Warszawa",
-  // District-specific searches
-  "fryzjer Mokotów",
-  "fryzjer Ursynów",
-  "fryzjer Wola",
-  "fryzjer Praga Warszawa",
-];
+  "places.id,places.displayName,places.formattedAddress,places.addressComponents,places.internationalPhoneNumber,places.rating,places.userRatingCount,places.websiteUri,places.types,places.location,places.priceLevel,places.photos,places.editorialSummary,nextPageToken";
 
 async function searchPage(
   query: string,
@@ -92,27 +67,30 @@ async function searchAll(query: string): Promise<RawPlace[]> {
 }
 
 async function collect() {
-  console.log("Starting data collection from Google Places API...\n");
+  console.log("Starting data collection from Google Places API...");
 
-  const allPlaces = new Map<string, RawPlace>();
-
-  for (const query of QUERIES) {
-    console.log(`Searching: "${query}"`);
-    const places = await searchAll(query);
-    console.log(`  Found ${places.length} results\n`);
-
-    for (const place of places) {
-      if (place.id && !allPlaces.has(place.id)) {
-        allPlaces.set(place.id, place);
+  // Run all queries in parallel
+  const results = await Promise.all(
+    QUERIES.map(async (query) => {
+      console.log(`Searching: "${query}"`);
+      try {
+        const places = await searchAll(query);
+        console.log(`  Found ${places.length} results`);
+        return places;
+      } catch (err) {
+        console.error(`  ✗ Failed "${query}": ${err}`);
+        return [];
       }
-    }
-  }
+    })
+  );
 
-  const unique = Array.from(allPlaces.values());
-  console.log(`\nCollection complete.`);
-  console.log(`Total unique salons: ${unique.length}`);
+  // Concatenate all results
+  const allResults = results.flat();
+  console.log(`Collection complete.`);
+  console.log(`Total raw results: ${allResults.length}`);
 
-  writeFileSync("output/raw-salons.json", JSON.stringify(unique, null, 2));
+  mkdirSync("output", { recursive: true });
+  writeFileSync("output/raw-salons.json", JSON.stringify(allResults, null, 2));
   console.log(`Saved to output/raw-salons.json`);
 }
 

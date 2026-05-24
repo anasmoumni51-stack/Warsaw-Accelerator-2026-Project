@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { readFileSync } from "node:fs";
 import pg from "pg";
-import type { CleanSalon } from "./types.js";
+import type { CleanSalon } from "../utils/types.js";
 
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) {
@@ -9,17 +9,19 @@ if (!DATABASE_URL) {
   process.exit(1);
 }
 
-// Read schema from V1_Schema.sql and add IF NOT EXISTS for idempotency
-const schema = readFileSync("src/db_migrations/V1_Schema.sql", "utf-8");
-const CREATE_TABLES = schema.replace(/CREATE TABLE/g, "CREATE TABLE IF NOT EXISTS");
-
 const INSERT_SALON = `
-INSERT INTO salons (name, name_norm, address, address_norm, district, phone, website, rating, review_count)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO salons (
+  name, name_norm, address, address_norm, street_number, district, city, country, postcode,
+  phone, website, rating, review_count, price_range,
+  lat, lng, image_url
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 ON CONFLICT (name_norm, address_norm)
 DO NOTHING
 RETURNING id;
 `;
+
+const DEFAULT_IMAGE_URL = 'https://images.unsplash.com/photo-1560066984-138dadb4c035?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
 
 const UPSERT_SERVICE = `
 INSERT INTO services (name)
@@ -35,10 +37,6 @@ VALUES ($1, $2)
 ON CONFLICT DO NOTHING;
 `;
 
-function normalize(str: string): string {
-  return str.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
 async function seed() {
   console.log("Reading output/clean-salons.json...");
   const salons: CleanSalon[] = JSON.parse(
@@ -51,10 +49,17 @@ async function seed() {
     ssl: { rejectUnauthorized: false },
   });
   await client.connect();
+  console.log("Connected to database.\n");
 
-  // Create tables if not exist (idempotent)
-  await client.query(CREATE_TABLES);
-  console.log("Tables ready.\n");
+  // Check if tables exist
+  const tableCheck = await client.query(
+    `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'salons')`
+  );
+  if (!tableCheck.rows[0].exists) {
+    console.error("Tables not found. Run 'pnpm migrate' first.");
+    await client.end();
+    process.exit(1);
+  }
 
   // Cache service name → id to avoid repeated lookups
   const serviceCache = new Map<string, number>();
@@ -65,14 +70,22 @@ async function seed() {
   for (const salon of salons) {
     const result = await client.query(INSERT_SALON, [
       salon.name,
-      normalize(salon.name),
+      salon.nameNorm,
       salon.address,
-      normalize(salon.address),
+      salon.addressNorm,
+      salon.streetNumber,
       salon.district,
+      salon.city,
+      salon.country,
+      salon.postcode,
       salon.phone,
       salon.website,
       salon.rating,
       salon.reviewCount,
+      salon.priceRange,
+      salon.lat,
+      salon.lng,
+      salon.imageUrl ?? DEFAULT_IMAGE_URL,
     ]);
 
     if (!result.rowCount || result.rowCount === 0) {

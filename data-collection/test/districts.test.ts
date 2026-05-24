@@ -1,5 +1,5 @@
-import { getDistrict, WARSAW_DISTRICTS } from "../src/districts.js";
-import type { DistrictCenter } from "../src/types.js";
+import { getDistrict, WARSAW_DISTRICTS } from "../src/utils/districts.js";
+import type { DistrictCenter } from "../src/utils/types.js";
 
 describe("districts", () => {
   describe("getDistrict", () => {

@@ -1,19 +1,49 @@
 import {
+  normalize,
+  cleanName,
   normalizePhone,
   normalizeWebsite,
   clampRating,
   mapServices,
-  isSalon,
   dedup,
+  assignPriceRange,
 } from "../src/validate.js";
 
-// Export functions from validate.ts for testing
-// Note: We need to make these functions exportable
-// For now, we'll test the public API through the module
-
 describe("validate", () => {
-  // These tests assume the functions are exported
-  // If they're not exported, we need to refactor validate.ts to export them
+  describe("normalize", () => {
+    it("should lowercase, trim, and collapse spaces", () => {
+      expect(normalize("  Hello   World  ")).toBe("hello world");
+      expect(normalize("TEST")).toBe("test");
+      expect(normalize("")).toBe("");
+    });
+  });
+
+  describe("cleanName", () => {
+    it("should remove decorative symbols", () => {
+      expect(cleanName("★ Salon Bella ★")).toBe("Salon Bella");
+      expect(cleanName("✦ Hair Studio ✦")).toBe("Hair Studio");
+      expect(cleanName("✂️ Barber Shop")).toBe("Barber Shop");
+    });
+
+    it("should remove Warszawa/Warsaw suffixes", () => {
+      expect(cleanName("Salon Bella Warszawa")).toBe("Salon Bella");
+      expect(cleanName("Hair Studio, Warsaw")).toBe("Hair Studio");
+      expect(cleanName("Barber Shop - Warszawa")).toBe("Barber Shop");
+    });
+
+    it("should trim to 80 characters", () => {
+      const longName = "A".repeat(100);
+      expect(cleanName(longName).length).toBe(80);
+    });
+
+    it("should collapse multiple spaces", () => {
+      expect(cleanName("Salon    Bella")).toBe("Salon Bella");
+    });
+
+    it("should handle combined cleaning", () => {
+      expect(cleanName("★ Salon  Bella ✦ Warszawa")).toBe("Salon Bella");
+    });
+  });
 
   describe("normalizePhone", () => {
     it("should return null for undefined", () => {
@@ -42,6 +72,10 @@ describe("validate", () => {
 
     it("should handle phone with spaces and dashes", () => {
       expect(normalizePhone("+48 725-365-304")).toBe("+48 725 365 304");
+    });
+
+    it("should handle 12+ digit numbers correctly", () => {
+      expect(normalizePhone("4872536530412")).toBe("+48 725 365 304");
     });
   });
 
@@ -141,40 +175,6 @@ describe("validate", () => {
     });
   });
 
-  describe("isSalon", () => {
-    it("should return true for hair_salon type", () => {
-      expect(isSalon(["hair_salon"], "Test Salon")).toBe(true);
-    });
-
-    it("should return true for beauty_salon type", () => {
-      expect(isSalon(["beauty_salon"], "Test Salon")).toBe(true);
-    });
-
-    it("should return true for salon keyword in name", () => {
-      expect(isSalon([], "Hair Salon Warsaw")).toBe(true);
-    });
-
-    it("should return true for fryzjer keyword in name", () => {
-      expect(isSalon([], "Fryzjer Męski")).toBe(true);
-    });
-
-    it("should return false for non-salon business", () => {
-      expect(isSalon(["restaurant"], "Pizza Place")).toBe(false);
-    });
-
-    it("should return false for empty types and no keywords", () => {
-      expect(isSalon([], "Random Business")).toBe(false);
-    });
-
-    it("should return true for barber_shop type", () => {
-      expect(isSalon(["barber_shop"], "Test")).toBe(true);
-    });
-
-    it("should return true for nail_salon type", () => {
-      expect(isSalon(["nail_salon"], "Test")).toBe(true);
-    });
-  });
-
   describe("dedup", () => {
     it("should remove duplicates with same name and address", () => {
       const places = [
@@ -240,20 +240,79 @@ describe("validate", () => {
       expect(dedup(places)).toHaveLength(1);
     });
 
-    it("should normalize names before comparing", () => {
+    it("should dedupe using cleanName (city suffix)", () => {
       const places = [
         {
           id: "1",
-          displayName: { text: "  Salon  A  " },
+          displayName: { text: "Salon Bella Warszawa" },
           formattedAddress: "Address 1",
         },
         {
           id: "2",
-          displayName: { text: "salon a" },
-          formattedAddress: "address 1",
+          displayName: { text: "Salon Bella" },
+          formattedAddress: "Address 1",
         },
       ];
       expect(dedup(places)).toHaveLength(1);
+    });
+
+    it("should dedupe using cleanName (symbols)", () => {
+      const places = [
+        {
+          id: "1",
+          displayName: { text: "★ Salon Bella ★" },
+          formattedAddress: "Address 1",
+        },
+        {
+          id: "2",
+          displayName: { text: "Salon Bella" },
+          formattedAddress: "Address 1",
+        },
+      ];
+      expect(dedup(places)).toHaveLength(1);
+    });
+  });
+
+  describe("assignPriceRange", () => {
+    it("should assign zł zł zł to premium district + multiple services", () => {
+      expect(assignPriceRange("Śródmieście", ["Hair Styling", "Beauty Treatment"])).toBe("zł zł zł");
+      expect(assignPriceRange("Wola", ["Nail Care", "Hair Styling"])).toBe("zł zł zł");
+      expect(assignPriceRange("Mokotów", ["Barber", "Beauty Treatment"])).toBe("zł zł zł");
+    });
+
+    it("should assign zł zł zł to premium district + premium service (even if single)", () => {
+      expect(assignPriceRange("Śródmieście", ["Skin Care"])).toBe("zł zł zł");
+      expect(assignPriceRange("Wola", ["Beauty Treatment"])).toBe("zł zł zł");
+      expect(assignPriceRange("Mokotów", ["Makeup"])).toBe("zł zł zł");
+    });
+
+    it("should assign zł zł to premium district with single budget service", () => {
+      expect(assignPriceRange("Śródmieście", ["Barber"])).toBe("zł zł");
+      expect(assignPriceRange("Wola", ["Nail Care"])).toBe("zł zł");
+      expect(assignPriceRange("Mokotów", ["Hair Styling"])).toBe("zł zł");
+    });
+
+    it("should assign zł zł to mid district with 2+ services", () => {
+      expect(assignPriceRange("Żoliborz", ["Hair Styling", "Nail Care"])).toBe("zł zł");
+      expect(assignPriceRange("Ochota", ["Barber", "Beauty Treatment"])).toBe("zł zł");
+      expect(assignPriceRange("Ursynów", ["Nail Care", "Hair Styling"])).toBe("zł zł");
+    });
+
+    it("should assign zł to mid district with single service", () => {
+      expect(assignPriceRange("Żoliborz", ["Hair Styling"])).toBe("zł");
+      expect(assignPriceRange("Ochota", ["Barber"])).toBe("zł");
+      expect(assignPriceRange("Bielany", ["Nail Care"])).toBe("zł");
+    });
+
+    it("should assign zł to budget districts regardless of services", () => {
+      expect(assignPriceRange("Targówek", ["Hair Styling", "Beauty Treatment"])).toBe("zł");
+      expect(assignPriceRange("Bemowo", ["Skin Care", "Makeup"])).toBe("zł");
+      expect(assignPriceRange("Białołęka", ["Barber"])).toBe("zł");
+    });
+
+    it("should assign zł to unknown districts", () => {
+      expect(assignPriceRange("Unknown", ["Hair Styling"])).toBe("zł");
+      expect(assignPriceRange("Some Random District", ["Beauty Treatment", "Skin Care"])).toBe("zł");
     });
   });
 });

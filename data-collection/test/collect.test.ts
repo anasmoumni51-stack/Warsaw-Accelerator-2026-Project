@@ -24,9 +24,6 @@ describe("collect", () => {
         json: jest.fn<any>().mockResolvedValue({ places: [] }),
       };
       mockFetch.mockResolvedValue(mockResponse);
-
-      // We can't easily test searchPage without refactoring
-      // For now, we test the fetch call structure
       expect(true).toBe(true);
     });
 
@@ -43,22 +40,5 @@ describe("collect", () => {
     });
   });
 
-  describe("deduplication logic", () => {
-    it("should deduplicate by place ID", () => {
-      const places = [
-        { id: "1", displayName: { text: "Salon A" } },
-        { id: "1", displayName: { text: "Salon A" } },
-        { id: "2", displayName: { text: "Salon B" } },
-      ];
 
-      const allPlaces = new Map();
-      for (const place of places) {
-        if (place.id && !allPlaces.has(place.id)) {
-          allPlaces.set(place.id, place);
-        }
-      }
-
-      expect(allPlaces.size).toBe(2);
-    });
-  });
 });
