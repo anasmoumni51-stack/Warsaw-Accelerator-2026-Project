@@ -4,6 +4,7 @@
   "description": "Collect, validate, and seed Warsaw salon data from Google Places API",
   "type": "module",
   "scripts": {
+    "start": "tsx src/collect.ts && tsx src/validate.ts && tsx src/utils/fetch-photos.ts && tsx src/database/migrate.ts && tsx src/database/seed.ts && tsx test/test-db.ts",
     "migrate": "tsx src/database/migrate.ts",
     "seed": "tsx src/database/seed.ts",
     "collect": "tsx src/collect.ts",

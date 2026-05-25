@@ -107,7 +107,7 @@ async function seed() {
         serviceId = serviceResult.rows[0].id;
         serviceCache.set(serviceName, serviceId);
       }
-
+      console.log("adding row to the database...");
       await client.query(INSERT_SALON_SERVICE, [salonId, serviceId]);
     }
   }
