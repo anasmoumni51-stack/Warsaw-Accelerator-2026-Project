@@ -1,0 +1,41 @@
+name: SalonAPI CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'salonapi/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: salonapi
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Run tests
+        run: ./mvnw test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Dokploy Deployment
+        uses: benbristow/dokploy-deploy-action@0.2.2
+        with:
+          application_id: ${{ secrets.DOKPLOY_APP_ID }}
+          api_token: ${{ secrets.DOKPLOY_TOKEN }}
+          dokploy_url: ${{ secrets.DOKPLOY_URL }}
+          service_type: application
