@@ -1,8 +1,6 @@
 # Warsaw Beauty Salon Explorer
 
-Full-stack application for discovering and exploring beauty salons in Warsaw. Built as a take-home task for the SumUp Warsaw Accelerator 2026 Software Engineer Intern position.
-
-This monorepo contains a data collection pipeline (TypeScript), REST API (Spring Boot), and React frontend, all deployed with Docker on AWS EC2.
+A full-stack web application for discovering and exploring beauty salons across Warsaw. We collected real salon data from Google Places API, built a REST API to serve it, and created a modern frontend with filtering, search, and interactive mapping.
 
 ## Live Deployment URLs
 

@@ -41,7 +41,7 @@ export default function Navbar({ activeItem = "Explore" }: NavbarProps) {
           <img
             src="/logo.png"
             alt="SALONS UI"
-            className="flex-shrink-0 h-[48px] w-auto gap-1"
+            className="flex-shrink-0 h-[36px] md:h-[37px] min-[1400px]:h-[48px] w-auto gap-1"
           />
         </Link>
 

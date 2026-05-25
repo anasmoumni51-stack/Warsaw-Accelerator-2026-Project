@@ -45,12 +45,12 @@ function SalonInfo() {
           maxLength={100}
           value={s.name}
           onChange={(e) => handleInputChange('name', e.target.value)}
-          className="w-full font-display text-[36px] font-semibold text-ink mb-4 border-b-2 border-primary pb-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="w-full font-display text-[24px] md:text-[32px] lg:text-[36px] font-semibold text-ink mb-4 border-b-2 border-primary pb-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         />
       ) : (
-        <h1 className="font-display text-[36px] font-semibold text-ink mb-4" style={{ textWrap: 'balance' }}>{s.name}</h1>
+        <h1 className="font-display text-[24px] md:text-[32px] lg:text-[36px] font-semibold text-ink mb-4" style={{ textWrap: 'balance' }}>{s.name}</h1>
       )}
-      <div className="flex items-center gap-4 mb-2">
+      <div className="flex flex-wrap items-center gap-3 md:gap-4 mb-2">
         <div className="flex items-center gap-1.5">
           <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="#E8385C" stroke="#E8385C" strokeWidth="2">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -321,7 +321,7 @@ function SalonDetailContent({ isEditing, isSaving, displaySalon, handleEdit, han
       <Navbar activeItem={isEditing ? 'Edit Salons' : 'About'} />
 
       {/* Header bar */}
-      <div className="border-b border-hairline bg-canvas px-6 py-4">
+      <div className="border-b border-hairline bg-canvas px-4 md:px-6 py-4">
         <div className="max-w-[1200px] mx-auto flex items-center justify-between">
           <Link
             to="/"
@@ -361,7 +361,7 @@ function SalonDetailContent({ isEditing, isSaving, displaySalon, handleEdit, han
       </div>
 
       {/* Content */}
-      <div className="px-6 py-10">
+      <div className="px-4 md:px-6 py-10">
         <div className="max-w-[1200px] mx-auto">
           {displaySalon && <SalonHero salon={displaySalon} />}
 
