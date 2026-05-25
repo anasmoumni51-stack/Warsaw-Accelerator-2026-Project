@@ -2,7 +2,44 @@
 
 A RESTful API for managing beauty salon data in Warsaw. Built with Spring Boot 4.0.6 and PostgreSQL.
 
-## Technology Stack
+## Project Structure
+
+```
+salonapi/
+├── src/
+│   ├── main/
+│   │   ├── java/com/salons/warsaw/
+│   │   │   ├── SalonApiApplication.java          # Spring Boot entry point
+│   │   │   ├── config/
+│   │   │   │   └── CorsConfig.java                # CORS configuration
+│   │   │   ├── controller/
+│   │   │   │   └── SalonController.java           # REST endpoints
+│   │   │   ├── dto/
+│   │   │   │   ├── SalonResponse.java             # Response DTO
+│   │   │   │   └── SalonUpdateRequest.java        # Update request DTO
+│   │   │   ├── entity/
+│   │   │   │   ├── Salon.java                     # Salon entity
+│   │   │   │   └── Service.java                   # Service entity
+│   │   │   ├── repository/
+│   │   │   │   ├── SalonRepository.java           # Salon data access
+│   │   │   │   └── ServiceRepository.java         # Service data access
+│   │   │   └── service/
+│   │   │       └── SalonService.java              # Business logic
+│   │   └── resources/
+│   │       ├── application.properties             # Dev config (H2)
+│   │       └── application-prod.yaml              # Prod config (PostgreSQL)
+│   └── test/
+│       └── java/com/salons/warsaw/
+│           └── SalonApiApplicationTests.java      # Integration tests
+├── Dockerfile                                     # Multi-stage Docker build
+├── docker-compose-prod.yml                        # Production: app only (RDS external)
+├── docker-compose-dev.yml                         # Development: app with H2
+├── .env.example                                   # Environment variable template
+├── .dockerignore                                  # Docker build exclusions
+└── pom.xml                                        # Maven dependencies
+```
+
+## Stack & Overview
 
 - **Framework**: Spring Boot 4.0.6
 - **Java**: 21
@@ -11,279 +48,193 @@ A RESTful API for managing beauty salon data in Warsaw. Built with Spring Boot 4
 - **API Documentation**: SpringDoc OpenAPI 3.0.2
 - **Validation**: Jakarta Bean Validation
 - **Build Tool**: Maven
+- **Containerization**: Docker (multi-stage build)
 
-## Getting Started
+## Features
 
-### Development Mode
+- RESTful API with pagination, filtering, and sorting
+- Swagger/OpenAPI documentation
+- Multi-environment configuration (dev/prod)
+- CORS support with configurable origins
+- Input validation with Jakarta Bean Validation
+- Docker containerization
+- In-memory H2 for development, PostgreSQL for production
 
-The application runs with an in-memory H2 database by default:
+## Quick Start
 
-```bash
-./mvnw spring-boot:run
-```
+### Option 1: Run with Maven (Local Development)
 
-Access the H2 console at `http://localhost:8080/h2-console`:
-- JDBC URL: `jdbc:h2:mem:salondb`
-- Username: `test`
-- Password: `testtest`
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd salonapi
+   ```
 
-### Production Mode
+2. **Run with default H2 database**
+   ```bash
+   ./mvnw spring-boot:run
+   ```
 
-Set the active profile and provide database credentials:
+3. **Access the API**
+   - API: `http://localhost:8080/v1/salons`
+   - Swagger UI: `http://localhost:8080/swagger-ui.html`
+   - H2 Console: `http://localhost:8080/h2-console`
+     - JDBC URL: `jdbc:h2:mem:salondb`
+     - Username: `test`
+     - Password: `testtest`
 
-```bash
-export SPRING_PROFILES_ACTIVE=prod
-export DATABASE_URL=jdbc:postgresql://your-host:5432/salon_db
-export DATABASE_USERNAME=your_username
-export DATABASE_PASSWORD=your_password
-export PORT=8080
+### Option 2: Run with Docker (Development)
 
-./mvnw spring-boot:run
-```
+1. **Build and run the app container**
+   ```bash
+   docker compose -f docker-compose-dev.yml up --build
+   ```
 
-Or run the JAR:
+2. **Access the API**
+   - API: `http://localhost:8080/v1/salons`
+   - Swagger UI: `http://localhost:8080/swagger-ui.html`
 
-```bash
-./mvnw clean package
-java -jar target/salonapi-0.0.1-SNAPSHOT.jar
-```
+3. **Stop the container**
+   ```bash
+   docker compose -f docker-compose-dev.yml down
+   ```
 
-## API Documentation
+### Option 3: Run with Docker (Production)
 
-Once the application is running, access the interactive API documentation:
+1. **Create a `.env` file**
+   ```bash
+   cp .env.example .env
+   ```
 
-- **Swagger UI**: `http://localhost:8080/swagger-ui.html`
-- **OpenAPI Spec**: `http://localhost:8080/v3/api-docs`
+2. **Edit `.env` with your RDS credentials**
+   ```env
+   DATABASE_URL=jdbc:postgresql://your-rds-host:5432/salondb
+   DATABASE_USERNAME=your_username
+   DATABASE_PASSWORD=your_password
+   CORS_ORIGIN=https://your-frontend-domain.com
+   ```
 
-## API Endpoints
+3. **Build and run the production container**
+   ```bash
+   docker compose -f docker-compose-prod.yml up --build -d
+   ```
 
-### Get All Salons
+4. **Check logs**
+   ```bash
+   docker compose -f docker-compose-prod.yml logs -f
+   ```
 
-Retrieve a paginated list of salons with optional filtering.
+5. **Stop the container**
+   ```bash
+   docker compose -f docker-compose-prod.yml down
+   ```
 
-**Endpoint**: `GET /v1/salons`
+### Option 4: Build JAR and run manually
 
-**Query Parameters**:
-- `district` (optional): Filter by district name
-- `service` (optional): Filter by service type
+1. **Build the JAR**
+   ```bash
+   ./mvnw clean package -DskipTests
+   ```
+
+2. **Run the JAR**
+   ```bash
+   java -jar target/salonapi-0.0.1-SNAPSHOT.jar
+   ```
+
+3. **Run with production profile**
+   ```bash
+   export SPRING_PROFILES_ACTIVE=prod
+   export DATABASE_URL=jdbc:postgresql://your-host:5432/salondb
+   export DATABASE_USERNAME=your_username
+   export DATABASE_PASSWORD=your_password
+   java -jar target/salonapi-0.0.1-SNAPSHOT.jar
+   ```
+
+## REST API Endpoints
+
+### Salons
+- `GET /v1/salons` - Retrieve all salons (paginated: ?page=0&size=20)
+- `GET /v1/salons?district={district}&service={service}` - Filter by district or service and both
+- `GET /v1/salons?sort={field}&orderBy={ASC|DESC}` - Sort salons (fields: rating, priceRange, name, reviewCount)
+- `GET /v1/salons/{id}` - Retrieve one salon with full details
+- `PUT /v1/salons/{id}` - Update a salon with all input fields
+
+**Query Parameters:**
 - `page` (optional): Page number (0-indexed, default: 0)
-- `size` (optional): Page size (default: 20)
-- `sort` (optional): Sort field and direction (e.g., `name,asc`)
+- `size` (optional): Page size (default: 20, max: 100)
+- `district` (optional): Filter by Warsaw district name
+- `service` (optional): Filter by service type (e.g., "Hair Styling", "Nail Care")
+- `sort` (optional): Sort field (rating, priceRange, name, reviewCount)
+- `orderBy` (optional): Sort direction (ASC, DESC, default: DESC)
 
-**Example Request**:
+**Example Requests:**
 ```bash
-curl -X GET "http://localhost:8080/v1/salons?district=Śródmieście&page=0&size=10"
+# Get all salons
+GET /v1/salons?page=0&size=20
+
+# Filter by district
+GET /v1/salons?district=Śródmieście
+
+# Filter by service
+GET /v1/salons?service=Hair%20Styling
+
+# Filter by both district and service
+GET /v1/salons?district=Śródmieście&service=Hair%20Styling
+
+# Sort by rating (highest first)
+GET /v1/salons?sort=rating&orderBy=DESC
+
+# Combine pagination, filtering, and sorting
+GET /v1/salons?district=Śródmieście&sort=rating&orderBy=DESC&page=0&size=10
 ```
 
-**Example Response**:
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "name": "Beauty Studio",
-      "district": "Śródmieście",
-      "rating": 4.8,
-      "priceRange": "zł zł",
-      "imageUrl": "https://res.cloudinary.com/...",
-      "lat": 52.2297,
-      "lng": 21.0122,
-      "services": ["Hair Styling", "Nail Care"],
-      "reviewCount": 156
-    }
-  ],
-  "pageable": {
-    "pageNumber": 0,
-    "pageSize": 10,
-    "sort": {
-      "empty": true,
-      "sorted": false,
-      "unsorted": true
-    },
-    "offset": 0,
-    "paged": true,
-    "unpaged": false
-  },
-  "last": false,
-  "totalElements": 135,
-  "totalPages": 14,
-  "size": 10,
-  "number": 0,
-  "sort": {
-    "empty": true,
-    "sorted": false,
-    "unsorted": true
-  },
-  "first": true,
-  "numberOfElements": 10,
-  "empty": false
-}
+## Data Model
+
+**Design Decision:** Many-to-many relationship, a salon can offer multiple services.
+
+```
+┌──────────────┐         ┌──────────────────────┐         ┌──────────────┐
+│    salons    │         │   salon_services     │         │   services   │
+├──────────────┤         ├──────────────────────┤         ├──────────────┤
+│ id (PK)      │─┐       │ salon_id (FK)        │      ┌──│ id (PK)      │
+│ name         │ └────→  │ service_id (FK)      │ ←────┘  │ name         │
+│ name_norm    │         └──────────────────────┘         └──────────────┘
+│ address      │
+│ address_norm │
+│ street_number│
+│ district     │
+│ city         │
+│ country      │
+│ postcode     │
+│ phone        │
+│ website      │
+│ rating       │
+│ review_count │
+│ price_range  │
+│ lat          │
+│ lng          │
+│ image_url    │
+│ created_at   │
+│ updated_at   │
+└──────────────┘
 ```
 
-### Get Salon by ID
+- **salons** table maps to `SalonEntity`
+- **services** table maps to `ServiceEntity`
+- **salon_services** is the JPA join table used for assignments
+- **Unique Constraint:** `(name_norm, address_norm)` prevents duplicate salons
 
-Retrieve detailed information about a specific salon.
+## Environment Variables
 
-**Endpoint**: `GET /v1/salons/{id}`
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `SPRING_PROFILES_ACTIVE` | Spring profile (`dev` or `prod`) | `dev` | No |
+| `DATABASE_URL` | JDBC connection string | `jdbc:h2:mem:salondb` | Prod only |
+| `DATABASE_USERNAME` | Database username | `test` | Prod only |
+| `DATABASE_PASSWORD` | Database password | `testtest` | Prod only |
+| `CORS_ORIGIN` | Allowed CORS origins | `*` | No |
 
-**Path Parameters**:
-- `id` (required): Salon ID
-
-**Example Request**:
-```bash
-curl -X GET "http://localhost:8080/v1/salons/1"
-```
-
-**Example Response**:
-```json
-{
-  "id": 1,
-  "name": "Beauty Studio",
-  "address": "Marszałkowska 1",
-  "streetNumber": "1",
-  "district": "Śródmieście",
-  "city": "Warszawa",
-  "country": "Poland",
-  "postcode": "00-001",
-  "phone": "+48 123 456 789",
-  "website": "https://beautystudio.pl",
-  "services": ["Hair Styling", "Nail Care", "Skin Care"],
-  "priceRange": "zł zł",
-  "rating": 4.8,
-  "reviewCount": 156,
-  "imageUrl": "https://res.cloudinary.com/...",
-  "lat": 52.2297,
-  "lng": 21.0122
-}
-```
-
-**Error Response** (404):
-```json
-{
-  "error": "Salon not found"
-}
-```
-
-### Update Salon
-
-Update an existing salon's information.
-
-**Endpoint**: `PUT /v1/salons/{id}`
-
-**Path Parameters**:
-- `id` (required): Salon ID
-
-**Request Body** (JSON):
-```json
-{
-  "name": "Beauty Studio Plus",
-  "address": "Marszałkowska 1",
-  "district": "Śródmieście",
-  "phone": "+48 123 456 789",
-  "website": "https://beautystudio.pl",
-  "rating": 4.9,
-  "reviewCount": 160,
-  "priceRange": "zł zł"
-}
-```
-
-**Validation Rules**:
-- `name`: Required, max 255 characters
-- `address`: Required, max 500 characters
-- `district`: Required
-- `phone`: Required, max 30 characters
-- `website`: Required, max 500 characters
-- `rating`: Required, must be between 0 and 5
-- `reviewCount`: Required, must be >= 0
-- `priceRange`: Required
-
-**Example Request**:
-```bash
-curl -X PUT "http://localhost:8080/v1/salons/1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Beauty Studio Plus",
-    "address": "Marszałkowska 1",
-    "district": "Śródmieście",
-    "phone": "+48 123 456 789",
-    "website": "https://beautystudio.pl",
-    "rating": 4.9,
-    "reviewCount": 160,
-    "priceRange": "zł zł"
-  }'
-```
-
-**Example Response** (200):
-```json
-{
-  "id": 1,
-  "name": "Beauty Studio Plus",
-  "address": "Marszałkowska 1",
-  "streetNumber": "1",
-  "district": "Śródmieście",
-  "city": "Warszawa",
-  "country": "Poland",
-  "postcode": "00-001",
-  "phone": "+48 123 456 789",
-  "website": "https://beautystudio.pl",
-  "services": ["Hair Styling", "Nail Care", "Skin Care"],
-  "priceRange": "zł zł",
-  "rating": 4.9,
-  "reviewCount": 160,
-  "imageUrl": "https://res.cloudinary.com/...",
-  "lat": 52.2297,
-  "lng": 21.0122
-}
-```
-
-**Error Responses**:
-- `400 Bad Request`: Invalid input data (validation errors)
-- `404 Not Found`: Salon not found
-
-## Database Schema
-
-### Salons Table
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | SERIAL | PRIMARY KEY | Auto-incrementing ID |
-| name | VARCHAR(255) | NOT NULL | Salon name |
-| name_norm | VARCHAR(255) | NOT NULL | Normalized name (lowercase) |
-| address | VARCHAR(500) | NOT NULL | Full address |
-| address_norm | VARCHAR(500) | NOT NULL | Normalized address |
-| street_number | VARCHAR(50) | | Street number |
-| district | VARCHAR(100) | NOT NULL | Warsaw district |
-| city | VARCHAR(100) | NOT NULL | City name |
-| country | VARCHAR(100) | NOT NULL | Country name |
-| postcode | VARCHAR(20) | NOT NULL | Postal code |
-| phone | VARCHAR(30) | | Phone number |
-| website | VARCHAR(500) | | Website URL |
-| rating | DECIMAL(2,1) | | Rating (0-5) |
-| review_count | INTEGER | DEFAULT 0 | Number of reviews |
-| price_range | VARCHAR(20) | | Price range (zł, zł zł, zł zł zł) |
-| lat | DOUBLE PRECISION | | Latitude |
-| lng | DOUBLE PRECISION | | Longitude |
-| image_url | VARCHAR(1000) | | Image URL |
-| created_at | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
-| updated_at | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
-
-**Unique Constraint**: `(name_norm, address_norm)`
-
-### Services Table
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | SERIAL | PRIMARY KEY | Auto-incrementing ID |
-| name | VARCHAR(100) | NOT NULL, UNIQUE | Service name |
-
-### Salon-Services Join Table
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| salon_id | BIGINT | FOREIGN KEY | References salons(id) |
-| service_id | BIGINT | FOREIGN KEY | References services(id) |
-
-**Primary Key**: `(salon_id, service_id)`
+See `.env.example` for a template file.
 
 ## Error Handling
 
@@ -310,26 +261,12 @@ Run the test suite:
 ./mvnw test
 ```
 
-## Building for Production
-
-Create a production-ready JAR:
-
-```bash
-./mvnw clean package -DskipTests
-```
-
-The JAR will be created in `target/salonapi-0.0.1-SNAPSHOT.jar`.
-
 ## CORS Configuration
 
 CORS origins are configured via the `CORS_ORIGIN` environment variable:
 
 - **Development**: Defaults to `*` (allows all origins)
-- **Production**: Set to your frontend domain
-
-```bash
-export CORS_ORIGIN=https://your-frontend-domain.com
-```
+- **Production**: Set to your frontend domain (e.g., `https://salons.technicaltask.live`)
 
 The configuration is in `CorsConfig.java` and reads from `application-prod.yaml` in production.
 
