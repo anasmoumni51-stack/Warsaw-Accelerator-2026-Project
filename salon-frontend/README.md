@@ -9,8 +9,7 @@ Built for the **SumUp Warsaw Accelerator 2026** technical assessment.
 ```text
 salon-frontend/
 ├── public/
-│   ├── favicon.svg                                  # App favicon
-│   └── icons.svg                                    # SVG sprite sheet
+│   └── logo.png                                     # SALONS UI brand logo
 ├── src/
 │   ├── main.tsx                                     # React entry point
 │   ├── App.tsx                                      # Root component, routing, API integration
