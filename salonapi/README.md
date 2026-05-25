@@ -4,33 +4,45 @@ A RESTful API for managing beauty salon data in Warsaw. Built with Spring Boot 4
 
 ## Project Structure
 
-```
+```text
 salonapi/
 ├── src/
 │   ├── main/
-│   │   ├── java/com/salons/warsaw/
-│   │   │   ├── SalonApiApplication.java          # Spring Boot entry point
-│   │   │   ├── config/
-│   │   │   │   └── CorsConfig.java                # CORS configuration
-│   │   │   ├── controller/
+│   │   ├── java/com/sumup/moumni/salonapi/
+│   │   │   ├── SalonapiApplication.java           # Spring Boot entry point
+│   │   │   ├── Common/
+│   │   │   │   ├── CorsConfig.java                # CORS configuration
+│   │   │   │   ├── ErrorDto.java                  # Error response DTO
+│   │   │   │   ├── GlobalExceptionHandler.java    # Centralized exception handling
+│   │   │   │   └── Exception/
+│   │   │   │       └── SalonNotFoundException.java
+│   │   │   ├── Controller/
 │   │   │   │   └── SalonController.java           # REST endpoints
-│   │   │   ├── dto/
-│   │   │   │   ├── SalonResponse.java             # Response DTO
-│   │   │   │   └── SalonUpdateRequest.java        # Update request DTO
-│   │   │   ├── entity/
-│   │   │   │   ├── Salon.java                     # Salon entity
-│   │   │   │   └── Service.java                   # Service entity
-│   │   │   ├── repository/
-│   │   │   │   ├── SalonRepository.java           # Salon data access
-│   │   │   │   └── ServiceRepository.java         # Service data access
-│   │   │   └── service/
+│   │   │   ├── Dto/
+│   │   │   │   ├── PageableDTO.java               # Pagination & sort validation
+│   │   │   │   ├── SalonDetailDTO.java            # Full salon details (GET /{id})
+│   │   │   │   ├── SalonFilterDTO.java            # Filter query params (district, service)
+│   │   │   │   ├── SalonSummaryDTO.java           # List view (GET /salons)
+│   │   │   │   └── SalonUpdateDTO.java            # Update request (PUT /{id})
+│   │   │   ├── Entity/
+│   │   │   │   ├── Salon.java                     # Salon JPA entity
+│   │   │   │   └── Services.java                  # Service JPA entity
+│   │   │   ├── Mapper/
+│   │   │   │   └── SalonMapper.java               # MapStruct entity ↔ DTO mapping
+│   │   │   ├── Repository/
+│   │   │   │   └── SalonRepository.java           # Salon data access (with @EntityGraph)
+│   │   │   └── Service/
 │   │   │       └── SalonService.java              # Business logic
 │   │   └── resources/
 │   │       ├── application.properties             # Dev config (H2)
 │   │       └── application-prod.yaml              # Prod config (PostgreSQL)
 │   └── test/
-│       └── java/com/salons/warsaw/
-│           └── SalonApiApplicationTests.java      # Integration tests
+│       └── java/com/sumup/moumni/salonapi/
+│           ├── SalonapiApplicationTests.java      # Context load test
+│           ├── Controller/
+│           │   └── SalonControllerTest.java       # Controller unit tests (Mockito)
+│           └── Service/
+│               └── SalonServiceTest.java          # Service unit tests (Mockito)
 ├── Dockerfile                                     # Multi-stage Docker build
 ├── docker-compose-prod.yml                        # Production: app only (RDS external)
 ├── docker-compose-dev.yml                         # Development: app with H2
@@ -45,8 +57,10 @@ salonapi/
 - **Java**: 21
 - **Database**: PostgreSQL (production) / H2 (development)
 - **ORM**: Spring Data JPA with Hibernate
-- **API Documentation**: SpringDoc OpenAPI 3.0.2
+- **Mapping**: MapStruct 1.16.3 (entity ↔ DTO)
 - **Validation**: Jakarta Bean Validation
+- **API Documentation**: SpringDoc OpenAPI 3.0.2
+- **Utilities**: Lombok 1.18.46
 - **Build Tool**: Maven
 - **Containerization**: Docker (multi-stage build)
 
@@ -77,7 +91,7 @@ salonapi/
 
 3. **Access the API**
    - API: `http://localhost:8080/v1/salons`
-   - Swagger UI: `http://localhost:8080/swagger-ui.html`
+   - Swagger UI: `http://localhost:8080/swagger`
    - H2 Console: `http://localhost:8080/h2-console`
      - JDBC URL: `jdbc:h2:mem:salondb`
      - Username: `test`
@@ -92,7 +106,7 @@ salonapi/
 
 2. **Access the API**
    - API: `http://localhost:8080/v1/salons`
-   - Swagger UI: `http://localhost:8080/swagger-ui.html`
+   - Swagger UI: `http://localhost:8080/swagger`
 
 3. **Stop the container**
    ```bash
@@ -109,9 +123,10 @@ salonapi/
 2. **Edit `.env` with your RDS credentials**
    ```env
    DATABASE_URL=jdbc:postgresql://your-rds-host:5432/salondb
-   DATABASE_USERNAME=your_username
-   DATABASE_PASSWORD=your_password
+   DATABASE_USERNAME=your_db_user
+   DATABASE_PASSWORD=your_db_password
    CORS_ORIGIN=https://your-frontend-domain.com
+   PORT=8080
    ```
 
 3. **Build and run the production container**
@@ -193,36 +208,39 @@ GET /v1/salons?district=Śródmieście&sort=rating&orderBy=DESC&page=0&size=10
 **Design Decision:** Many-to-many relationship, a salon can offer multiple services.
 
 ```
-┌──────────────┐         ┌──────────────────────┐         ┌──────────────┐
-│    salons    │         │   salon_services     │         │   services   │
-├──────────────┤         ├──────────────────────┤         ├──────────────┤
-│ id (PK)      │─┐       │ salon_id (FK)        │      ┌──│ id (PK)      │
-│ name         │ └────→  │ service_id (FK)      │ ←────┘  │ name         │
-│ name_norm    │         └──────────────────────┘         └──────────────┘
-│ address      │
-│ address_norm │
-│ street_number│
-│ district     │
-│ city         │
-│ country      │
-│ postcode     │
-│ phone        │
-│ website      │
-│ rating       │
-│ review_count │
-│ price_range  │
-│ lat          │
-│ lng          │
-│ image_url    │
-│ created_at   │
-│ updated_at   │
-└──────────────┘
+┌──────────────────┐         ┌──────────────────────┐         ┌──────────────┐
+│     salons       │         │   salon_services     │         │   services   │
+├──────────────────┤         ├──────────────────────┤         ├──────────────┤
+│ id (PK)          │─┐       │ salon_id (FK)        │      ┌──│ id (PK)      │
+│ name             │ └────→  │ service_id (FK)      │ ←────┘  │ name         │
+│ name_norm (RO)   │         └──────────────────────┘         └──────────────┘
+│ address          │
+│ address_norm (RO)│
+│ street_number    │
+│ district         │
+│ city             │
+│ country          │
+│ postcode         │
+│ phone            │
+│ website          │
+│ rating           │
+│ review_count     │
+│ price_range      │
+│ lat              │
+│ lng              │
+│ image_url        │
+│ created_at       │
+│ updated_at       │
+└──────────────────┘
+
+(RO) = read-only, populated by database/pipeline, not mapped for updates
 ```
 
-- **salons** table maps to `SalonEntity`
-- **services** table maps to `ServiceEntity`
-- **salon_services** is the JPA join table used for assignments
+- **salons** table maps to `Salon` entity
+- **services** table maps to `Services` entity
+- **salon_services** is the JPA join table used for many-to-many assignment
 - **Unique Constraint:** `(name_norm, address_norm)` prevents duplicate salons
+- **@EntityGraph:** Repository queries use `attributePaths = "services"` to eagerly fetch services without N+1
 
 ## Environment Variables
 
@@ -233,25 +251,21 @@ GET /v1/salons?district=Śródmieście&sort=rating&orderBy=DESC&page=0&size=10
 | `DATABASE_USERNAME` | Database username | `test` | Prod only |
 | `DATABASE_PASSWORD` | Database password | `testtest` | Prod only |
 | `CORS_ORIGIN` | Allowed CORS origins | `*` | No |
+| `PORT` | Server port | `8080` | No |
 
-See `.env.example` for a template file.
+In dev mode, H2 is configured directly in `application.properties` (no env vars needed).
 
 ## Error Handling
 
 The API uses standard HTTP status codes:
 
-- `200 OK`: Request successful
-- `400 Bad Request`: Invalid input or validation error
-- `404 Not Found`: Resource not found
-- `500 Internal Server Error`: Server error
-
-All error responses follow this format:
-
-```json
-{
-  "error": "Error message description"
-}
-```
+| Status | When | Response format |
+|--------|------|-----------------|
+| `200 OK` | Request successful | Requested resource |
+| `400 Bad Request` | Invalid input or validation error | `Map<String, String>` with field-level errors |
+| `404 Not Found` | Salon not found | `ErrorDto` with error message |
+| `409 Conflict` | Duplicate constraint violation (name + address) | `ErrorDto` with conflict message |
+| `500 Internal Server Error` | Unexpected server error | `Map<String, Object>` with status, error, path |
 
 ## Testing
 
@@ -263,13 +277,9 @@ Run the test suite:
 
 ## CORS Configuration
 
-CORS origins are configured via the `CORS_ORIGIN` environment variable:
+CORS origins are configured via the `app.cors.origin` property, driven by the `CORS_ORIGIN` environment variable in production:
 
 - **Development**: Defaults to `*` (allows all origins)
-- **Production**: Set to your frontend domain (e.g., `https://salons.technicaltask.live`)
+- **Production**: Set to your frontend domain (e.g., `https://salon-ui.technical-task.live`)
 
-The configuration is in `CorsConfig.java` and reads from `application-prod.yaml` in production.
-
-## License
-
-This project is part of the Warsaw Beauty Salon Explorer application.
+The configuration is in `Common/CorsConfig.java` and reads `app.cors.origin` from the active Spring profile.
