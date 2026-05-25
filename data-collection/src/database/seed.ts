@@ -23,17 +23,18 @@ RETURNING id;
 
 const DEFAULT_IMAGE_URL = 'https://images.unsplash.com/photo-1560066984-138dadb4c035?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
 
-const UPSERT_SERVICE = `
-INSERT INTO services (name)
-VALUES ($1)
-ON CONFLICT (name)
-DO UPDATE SET name = EXCLUDED.name
-RETURNING id;
-`;
+const SERVICES = [
+  'Hair Styling',
+  'Beauty Treatment',
+  'Nail Care',
+  'Skin Care',
+  'Barber',
+  'Makeup'
+];
 
 const INSERT_SALON_SERVICE = `
 INSERT INTO salon_services (salon_id, service_id)
-VALUES ($1, $2)
+VALUES ($1, (SELECT id FROM services WHERE name = $2))
 ON CONFLICT DO NOTHING;
 `;
 
@@ -61,8 +62,14 @@ async function seed() {
     process.exit(1);
   }
 
-  // Cache service name → id to avoid repeated lookups
-  const serviceCache = new Map<string, number>();
+  // Pre-seed all service types
+  const valuesClause = SERVICES.map((_, i) => `($${i + 1})`).join(', ');
+  await client.query(
+    `INSERT INTO services (name) VALUES ${valuesClause}
+     ON CONFLICT (name) DO NOTHING;`,
+    SERVICES
+  );
+  console.log(`Pre-seeded ${SERVICES.length} services.\n`);
 
   let inserted = 0;
   let skipped = 0;
@@ -96,19 +103,10 @@ async function seed() {
     inserted++;
     const salonId = result.rows[0].id;
 
-    // Insert services and create relationships
+    // Link salon to its services
     for (const serviceName of salon.services) {
-      let serviceId: number;
-
-      if (serviceCache.has(serviceName)) {
-        serviceId = serviceCache.get(serviceName)!;
-      } else {
-        const serviceResult = await client.query(UPSERT_SERVICE, [serviceName]);
-        serviceId = serviceResult.rows[0].id;
-        serviceCache.set(serviceName, serviceId);
-      }
-      console.log("adding row to the database...");
-      await client.query(INSERT_SALON_SERVICE, [salonId, serviceId]);
+      console.log(`adding row to the table...\n`);
+      await client.query(INSERT_SALON_SERVICE, [salonId, serviceName]);
     }
   }
 

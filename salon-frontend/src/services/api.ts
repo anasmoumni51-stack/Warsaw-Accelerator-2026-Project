@@ -36,11 +36,18 @@ export async function getSalonById(id: number | string): Promise<SalonDetail> {
 }
 
 export async function updateSalon(id: number | string, data: SalonUpdate): Promise<SalonDetail> {
+  console.log('PUT /salons/' + id, data); // Debug: check payload
   const response = await fetch(`${API_BASE}/salons/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error('Failed to update salon');
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    const errorMessage = errorData?.error || errorData?.message || 'Failed to update salon';
+    throw new Error(errorMessage);
+  }
+  
   return response.json();
 }

@@ -48,6 +48,7 @@ function mapSalonToUpdateDto(salon: SalonDetail) {
     postcode: salon.postcode?.trim() || null,
     phone: salon.phone || '',
     website: salon.website || '',
+    services: salon.services || [],
     district: salon.district.trim(),
     priceRange: salon.priceRange || null,
     rating: salon.rating ?? 0,

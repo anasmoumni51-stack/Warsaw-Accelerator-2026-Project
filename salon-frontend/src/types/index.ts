@@ -45,6 +45,7 @@ export interface SalonUpdate {
   district: string;
   phone: string;
   website: string;
+  services: string[];
   priceRange?: string | null;
   rating: number;
   reviewCount: number;
