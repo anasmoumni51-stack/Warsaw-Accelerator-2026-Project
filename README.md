@@ -112,10 +112,9 @@ warsawACC/
 
 ### Prerequisites
 
-- Java 21+ (for backend)
-- Node.js 20+ (for frontend and data collection)
+- Java 21, Spring Boot 4.0.3, Spring Data JPA, Hibernate (for backend)
+- Node.js, Typescript, React 19 20+ (for frontend and data collection)
 - pnpm (for data collection)
-- npm (for frontend)
 - PostgreSQL 16+ (local or AWS RDS)
 - Docker (optional, for containerized deployment)
 
@@ -153,11 +152,11 @@ cd salonapi
 # Run locally (dev mode with H2 database, no config needed)
 ./mvnw spring-boot:run
 
-# Run with PostgreSQL (prod profile)
+# Run with PostgreSQL (prod profile) ! need to setup environement Production variables
 SPRING_PROFILES_ACTIVE=prod ./mvnw spring-boot:run
 ```
 
-API will be available at http://localhost:8080
+API will be available at http://localhost:8080/v1/
 Swagger UI at http://localhost:8080/swagger
 
 See [salonapi/README.md](salonapi/README.md) for detailed instructions.

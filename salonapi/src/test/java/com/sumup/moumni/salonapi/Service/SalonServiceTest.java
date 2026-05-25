@@ -8,6 +8,7 @@ import com.sumup.moumni.salonapi.Dto.SalonUpdateDTO;
 import com.sumup.moumni.salonapi.Entity.Salon;
 import com.sumup.moumni.salonapi.Mapper.SalonMapper;
 import com.sumup.moumni.salonapi.Repository.SalonRepository;
+import com.sumup.moumni.salonapi.Repository.ServiceRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -35,6 +36,9 @@ class SalonServiceTest {
 
     @Mock
     private SalonRepository salonRepository;
+
+    @Mock
+    private ServiceRepository serviceRepository;
 
     @Mock
     private SalonMapper salonMapper;

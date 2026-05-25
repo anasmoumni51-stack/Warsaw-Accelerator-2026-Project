@@ -5,9 +5,11 @@ import com.sumup.moumni.salonapi.Dto.SalonDetailDTO;
 import com.sumup.moumni.salonapi.Dto.SalonSummaryDTO;
 import com.sumup.moumni.salonapi.Dto.SalonUpdateDTO;
 import com.sumup.moumni.salonapi.Entity.Salon;
+import com.sumup.moumni.salonapi.Entity.Services;
 import com.sumup.moumni.salonapi.Common.Exception.SalonNotFoundException;
 import com.sumup.moumni.salonapi.Mapper.SalonMapper;
 import com.sumup.moumni.salonapi.Repository.SalonRepository;
+import com.sumup.moumni.salonapi.Repository.ServiceRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,12 +18,16 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.List;
+
 @Service
 @AllArgsConstructor
 @Transactional(readOnly = true)
 public class SalonService {
 
     private final SalonRepository salonRepository;
+    private final ServiceRepository serviceRepository;
     private final SalonMapper salonMapper;
 
 
@@ -67,8 +73,16 @@ public class SalonService {
             throw new SalonNotFoundException();
         }
         salonMapper.updateSalonFromDTO(updateDTO, salon);
+
+
+        if (updateDTO.getServices() != null) {
+            List<Services> found = serviceRepository.findByNameIn(updateDTO.getServices());
+            salon.setServices(new HashSet<>(found));
+        }
+
         salonRepository.save(salon);
 
         return salonMapper.toDetailDTO(salon);
     }
+
 }
