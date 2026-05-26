@@ -86,46 +86,20 @@ export default function SalonCard({ salon, onSelectSalon }: SalonCardProps) {
           ))}
         </div>
 
-        {/* Verified services (desktop only) + Action buttons*/}
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          {/* Verified services — hidden on mobile, shown on desktop */}
-          <div className="hidden md:flex flex-wrap gap-4">
-            {salon.services.slice(0, 2).map((service) => (
-              <div key={service} className="flex items-center gap-1 text-ink">
-                <svg
-                  aria-hidden="true"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#E8385C"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="m9 12 2 2 4-4" />
-                </svg>
-                <span className="font-body text-[12px]">{service}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex gap-2 w-full md:w-auto md:ml-4 flex-shrink-0">
-            <Link
-              to={`/salon/${salon.id}`}
-              className="flex-1 md:flex-none px-4 md:px-6 py-2 bg-primary hover:bg-primary-hover text-white rounded-[8px] font-body text-[13px] font-semibold cursor-pointer transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary whitespace-nowrap text-center"
-            >
-              View details
-            </Link>
-            <button
-              onClick={() => onSelectSalon?.(salon.id)}
-              className="flex-1 md:flex-none px-4 md:px-6 py-2 bg-canvas border border-hairline text-body rounded-[8px] font-body text-[13px] font-medium hover:border-primary cursor-pointer transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary whitespace-nowrap"
-            >
-              View on Map
-            </button>
-          </div>
+        {/* Action buttons */}
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
+          <Link
+            to={`/salon/${salon.id}`}
+            className="w-full md:w-auto px-4 md:px-6 py-2 bg-primary hover:bg-primary-hover text-white rounded-[8px] font-body text-[13px] font-semibold cursor-pointer transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary whitespace-nowrap text-center"
+          >
+            View details
+          </Link>
+          <button
+            onClick={() => onSelectSalon?.(salon.id)}
+            className="w-full md:w-auto px-4 md:px-6 py-2 bg-canvas border border-hairline text-body rounded-[8px] font-body text-[13px] font-medium hover:border-primary cursor-pointer transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary whitespace-nowrap"
+          >
+            View on Map
+          </button>
         </div>
       </div>
     </div>

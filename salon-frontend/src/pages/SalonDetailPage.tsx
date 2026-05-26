@@ -298,7 +298,7 @@ function SalonContact() {
               className="font-body text-[14px] text-body border border-hairline rounded-[8px] px-3 py-2 flex-1 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             />
           ) : (
-            <span className="font-body text-[14px] text-body truncate">{s.website}</span>
+            <a href={s.website} target="_blank" rel="noopener noreferrer" className="font-body text-[14px] text-body hover:underline break-all">{s.website}</a>
           )}
         </div>
       </div>

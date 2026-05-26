@@ -182,7 +182,7 @@ export default function HomePage({
             </div>
           </div>
 
-          <div className="mt-4 min-[1700px]:mt-0 min-[1700px]:flex-shrink-0">
+          <div className="mt-4 md:mt-0 md:-mb-4 min-[1700px]:flex-shrink-0">
             <TrustStrip />
           </div>
         </main>
