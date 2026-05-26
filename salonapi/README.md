@@ -30,12 +30,16 @@ salonapi/
 │   │   │   ├── Mapper/
 │   │   │   │   └── SalonMapper.java               # MapStruct entity ↔ DTO mapping
 │   │   │   ├── Repository/
-│   │   │   │   └── SalonRepository.java           # Salon data access (with @EntityGraph)
+│   │   │   │   ├── SalonRepository.java           # Salon data access
+│   │   │   │   └── ServiceRepository.java         # Service data access
 │   │   │   └── Service/
 │   │   │       └── SalonService.java              # Business logic
 │   │   └── resources/
 │   │       ├── application.properties             # Dev config (H2)
-│   │       └── application-prod.yaml              # Prod config (PostgreSQL)
+│   │       ├── application-prod.yaml              # Prod config (PostgreSQL)
+│   │       └── H2.migration/
+│   │           ├── schema.sql                     # H2 database schema
+│   │           └── data.sql                       # Seed data for local dev
 │   └── test/
 │       └── java/com/sumup/moumni/salonapi/
 │           ├── SalonapiApplicationTests.java      # Context load test
@@ -57,7 +61,7 @@ salonapi/
 - **Java**: 21
 - **Database**: PostgreSQL (production) / H2 (development)
 - **ORM**: Spring Data JPA with Hibernate
-- **Mapping**: MapStruct 1.16.3 (entity ↔ DTO)
+- **Mapping**: MapStruct 1.6.3 (entity ↔ DTO)
 - **Validation**: Jakarta Bean Validation
 - **API Documentation**: SpringDoc OpenAPI 3.0.2
 - **Utilities**: Lombok 1.18.46
@@ -74,13 +78,14 @@ salonapi/
 - Docker containerization
 - In-memory H2 for development, PostgreSQL for production
 
+
 ## Quick Start
 
 ### Option 1: Run with Maven (Local Development)
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/anasmoumni51-stack/Warsaw-Accelerator-2026-Project
    cd salonapi
    ```
 
@@ -88,8 +93,9 @@ salonapi/
    ```bash
    ./mvnw spring-boot:run
    ```
+   The app starts with an in-memory H2 database pre seeded with 5 sample salons and 6 services. No additional setup required.
 
-3. **Access the API**
+3. **Access the API And Test the API**
    - API: `http://localhost:8080/v1/salons`
    - Swagger UI: `http://localhost:8080/swagger`
    - H2 Console: `http://localhost:8080/h2-console`
@@ -120,7 +126,7 @@ salonapi/
    cp .env.example .env
    ```
 
-2. **Edit `.env` with your RDS credentials**
+2. **Edit `.env` with your postgreSQL credentials**
    ```env
    DATABASE_URL=jdbc:postgresql://your-rds-host:5432/salondb
    DATABASE_USERNAME=your_db_user
@@ -144,26 +150,6 @@ salonapi/
    docker compose -f docker-compose-prod.yml down
    ```
 
-### Option 4: Build JAR and run manually
-
-1. **Build the JAR**
-   ```bash
-   ./mvnw clean package -DskipTests
-   ```
-
-2. **Run the JAR**
-   ```bash
-   java -jar target/salonapi-0.0.1-SNAPSHOT.jar
-   ```
-
-3. **Run with production profile**
-   ```bash
-   export SPRING_PROFILES_ACTIVE=prod
-   export DATABASE_URL=jdbc:postgresql://your-host:5432/salondb
-   export DATABASE_USERNAME=your_username
-   export DATABASE_PASSWORD=your_password
-   java -jar target/salonapi-0.0.1-SNAPSHOT.jar
-   ```
 
 ## REST API Endpoints
 
@@ -240,7 +226,8 @@ GET /v1/salons?district=Śródmieście&sort=rating&orderBy=DESC&page=0&size=10
 - **services** table maps to `Services` entity
 - **salon_services** is the JPA join table used for many-to-many assignment
 - **Unique Constraint:** `(name_norm, address_norm)` prevents duplicate salons
-- **@EntityGraph:** Repository queries use `attributePaths = "services"` to eagerly fetch services without N+1
+- **@EntityGraph:** Used on `findById` to eagerly fetch services in a single query
+- **@BatchSize:** Used on the `services` entity field to batch-load collections for list queries (avoids N+1)
 
 ## Environment Variables
 
@@ -262,8 +249,11 @@ The API uses standard HTTP status codes:
 | Status | When | Response format |
 |--------|------|-----------------|
 | `200 OK` | Request successful | Requested resource |
-| `400 Bad Request` | Invalid input or validation error | `Map<String, String>` with field-level errors |
-| `404 Not Found` | Salon not found | `ErrorDto` with error message |
+| `400 Bad Request` | Validation error on request body | `Map<String, String>` with field-level errors |
+| `400 Bad Request` | Invalid query parameters | `ErrorDto` with error message |
+| `400 Bad Request` | Wrong parameter type (e.g. `?page=abc`) | `ErrorDto` with error message |
+| `404 Not Found` | Salon not found or non-existent endpoint | `ErrorDto` with error message |
+| `405 Method Not Allowed` | Wrong HTTP method (e.g. POST on GET-only endpoint) | `ErrorDto` with error message |
 | `409 Conflict` | Duplicate constraint violation (name + address) | `ErrorDto` with conflict message |
 | `500 Internal Server Error` | Unexpected server error | `Map<String, Object>` with status, error, path |
 
