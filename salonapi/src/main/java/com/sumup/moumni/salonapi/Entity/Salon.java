@@ -53,10 +53,10 @@ public class Salon {
     @Column(name = "phone")
     private String phone;
 
-    @Column(name = "website", length = 500)
+    @Column(name = "website")
     private String website;
 
-    @BatchSize(size = 20)
+    @BatchSize(size = 50)
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "salon_services",
@@ -80,7 +80,7 @@ public class Salon {
     @Column(name = "lng")
     private Double lng;
 
-    @Column(name = "image_url", length = 1000)
+    @Column(name = "image_url")
     private String imageUrl;
 
     @CreationTimestamp

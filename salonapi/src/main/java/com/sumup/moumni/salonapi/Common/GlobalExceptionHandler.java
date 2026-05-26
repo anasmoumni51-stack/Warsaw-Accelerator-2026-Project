@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -19,6 +21,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(SalonNotFoundException.class)
     public ResponseEntity<ErrorDto> handleSalonNotFound(SalonNotFoundException exception) {
@@ -77,12 +81,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorDto> handleNoResourceFound(NoResourceFoundException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                new ErrorDto(" Endpoint not found " + exception.getHttpMethod() + " " + exception.getResourcePath())
+                new ErrorDto("Endpoint not found: " + exception.getHttpMethod())
         );
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGenericException( HttpServletRequest request ) {
+    public ResponseEntity<Map<String, Object>> handleGenericException(Exception exception, HttpServletRequest request) {
+        log.error("Unexpected error on {} {}", request.getMethod(), request.getRequestURI(), exception);
+
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         errorResponse.put("error", "An unexpected error occurred. Please try again later.");

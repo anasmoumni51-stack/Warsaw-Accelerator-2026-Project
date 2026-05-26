@@ -1,31 +1,27 @@
 # Warsaw Beauty Salon Explorer
 
-A full stack web application for discovering and exploring beauty salons in Warsaw. i collected real salon data from Google Places API, built a REST API to serve it, and created a modern frontend UI with filtering, search, and interactive mapping.
+A full-stack web application for discovering and exploring beauty salons in Warsaw. I collected real salon data from Google Places API, built a REST API to serve it, and created a modern frontend UI with filtering, search, and interactive mapping.
 
-Demo : https://salon-ui.technical-task.live
+**Demo:** https://salon-ui.technical-task.live
 
 ## Live Deployment
 
-**Frontend:** https://salon-ui.technical-task.live  
-**API:** https://salon-api.technical-task.live/v1/  
-**Swagger UI:** https://salon-api.technical-task.live/swagger  
+**Frontend:** https://salon-ui.technical-task.live
+**API:** https://salon-api.technical-task.live/v1/
+**Swagger UI:** https://salon-api.technical-task.live/swagger
 **GitHub:** https://github.com/anasmoumni51-stack/Warsaw-Accelerator-2026-Project
 
 **Infrastructure:**
 - Amazon AWS EC2 instance m7i-flex.large (Ubuntu 22 LTS)
-- Docker containers with Github Actions CI/CD pipeline
+- Docker containers with GitHub Actions CI/CD pipeline
 - Cloudflare CDN (HTTPS Strict, Reverse Proxy, rate limiting, DDoS protection)
 
+## Prerequisites
 
-
-### Prerequisites
-
-- Java 21+ and Spring Boot 4.0 (for backend API )
-- Node.js 20+ and pnpm/npm (for data collection and frontend )
-- PostgreSQL 16+ (loca/production instance or AWS RDS)
+- Java 21+ and Spring Boot 4.0 (for backend API)
+- Node.js 20+ and pnpm/npm (for data collection and frontend)
+- PostgreSQL 16+ (local/production instance or AWS RDS)
 - Docker (optional, for containerized deployment)
-
-
 
 ## Technical Solution
 
@@ -33,9 +29,9 @@ Demo : https://salon-ui.technical-task.live
 
 This is a monorepo containing three components:
 
-1. **Data Collection Pipeline** (TypeScript) Fetches, cleans, resolves photos to a CDN and seeds salon data from Google Places API
-2. **Backend API** (Java/Spring Boot 4.0) RESTful API with filtering, sorting, and pagination
-3. **Frontend** (React/TypeScript) Modern web interface with interactive map finder and responsive design
+1. **Data Collection Pipeline** (TypeScript) — Fetches, cleans, resolves photos to a CDN, and seeds salon data from Google Places API
+2. **Backend API** (Java/Spring Boot 4.0) — RESTful API with filtering, sorting, and pagination
+3. **Frontend** (React/TypeScript) — Modern web interface with interactive map finder and responsive design
 
 ```text
 warsawACC/
@@ -47,7 +43,7 @@ warsawACC/
 │   │   │   ├── fetch-photos.ts   # Resolve photo URLs to public CDN
 │   │   │   ├── types.ts          # TypeScript interfaces
 │   │   │   ├── districts.ts      # Warsaw 18 districts mapping by lat and long
-│   │   │   └── queries.ts        # 17 search queries (English + Polish) modifieable
+│   │   │   └── queries.ts        # 17 search queries (English + Polish) modifiable
 │   │   └── database/
 │   │       ├── seed.ts       # Seed database with validated data
 │   │       └── migrate.ts    # Create database tables
@@ -92,58 +88,39 @@ warsawACC/
 
 ### Data Collection
 
-- Fetches 600+ real salon data in warsaw from Google Places API using search queries 
-( the queries mimick real user searchs and can be modified in data-collection/src/utils/queries.ts )
+- **600+ real salons** fetched from Google Places API using search queries (the queries mimic real user searches and can be modified in `data-collection/src/utils/queries.ts`)
 
-- Deduplicate, normalizes, parses and validates salon data collected from the API.  
-( automatically extracts district using lat,lng and city / postcode / street / streetNumber) 
+- **Data cleaning and validation** — deduplicates, normalizes, parses, and validates salon data (automatically extracts district using lat/lng and city/postcode/street/streetNumber)
 
-- Fetches and Resolves salon photos to a google public CDN URL 
-(i avoided storing them server-side for bandwith and performance issues on amazon AWS EC2)
+- **Photo resolution** — fetches and resolves salon photos to a Google public CDN URL (I avoided storing them server-side for bandwidth and performance issues on Amazon AWS EC2)
 
-- Automated database seeding with idempotent seeding and migrations 
-( pnpm run start automatically exceutes full pipeline as idempotent and can be rerun multiple times )
-
+- **Automated database seeding** — idempotent seeding and migrations (`pnpm run start` automatically executes the full pipeline and can be rerun multiple times safely)
 
 ### Backend API
 
-- RESTful endpoints for salon listing and detail views 
-( Following REST API conventions correctly with DTO Validation enforced to meet the Database Schema constraints and all security edge case scenarios )
+- **RESTful endpoints** for salon listing and detail views (following REST conventions with DTO validation enforced to meet database schema constraints and security edge cases)
 
-- Pagination with filtering (by district, service type)
-( batchsize 20 to avoid N+1 while using 2 paginated queries and Entity graph used in custom derived methods for 1 query optimisation )
+- **Pagination with filtering** by district and service type (batch size 20 to avoid N+1, using 2 paginated queries and `@EntityGraph` in custom derived methods for single-query optimisation)
 
-- Sorting (by rating, review count, name, price)
-( all query parameters are DTO Validated to avoid XSS using a @Pattern RegExpression )
+- **Sorting** by rating, review count, name, and price (all query parameters are DTO-validated to avoid XSS using `@Pattern` regex)
 
-- Global exception handling with proper HTTP status codes
-( Centralised global exception handling with a custom error string and an Error DTO )
+- **Global exception handling** with proper HTTP status codes (centralised with custom error string and `ErrorDto`)
 
-- CORS configuration for a production domain and dev/production environements configuration
-(Local Dev H2 in memory with a Database schema and pre seeding data matching full production schema )
+- **CORS configuration** for production domain and dev/production environments (local dev uses H2 in-memory with a database schema and pre-seeded data matching full production schema)
 
-- Unit Test Coverage and Swagger API documentation
-(Mockito unit tests covering Controller and Service layers, OpenAPI 3 with annotations on all DTO's and testable endpoints at /swagger)
-
+- **Unit test coverage and Swagger API documentation** (Mockito unit tests covering Controller and Service layers, OpenAPI 3 with annotations on all DTOs and testable endpoints at `/swagger`)
 
 ### Frontend
 
-- Responsive three-column layout (filters, salon list, map)
-( Tailwind flexbox with custom 1400px/1800px breakpoints and mobile dialog for sidebar )
+- **Responsive three-column layout** (filters, salon list, map) — Tailwind flexbox with custom 1400px/1800px breakpoints and mobile dialog for sidebar
 
-- Client-side filtering (rating, price range)
-( useSalonFilters hook filters current page array by price level and minimum rating )
+- **Client-side filtering** (rating, price range) — `useSalonFilters` hook filters current page array by price level and minimum rating
 
-- Server-side filtering (district, service type)
-( API call with district/service query params, pagination resets on filter change )
+- **Server-side filtering** (district, service type) — API call with district/service query params, pagination resets on filter change
 
-- Interactive Leaflet map with custom markers
-( with exact lat,lng location and custom styled pins and map.flyTo() animation )
+- **Interactive Leaflet map** with custom markers — exact lat/lng location with custom styled pins and `map.flyTo()` animation
 
-- Salon detail view with edit functionality
-( same page editing via useSalonEditor hook and SalonEditContext )
-
-
+- **Salon detail view** with edit functionality — same-page editing via `useSalonEditor` hook and `SalonEditContext`
 
 
 ### Tech Stack
@@ -159,35 +136,25 @@ warsawACC/
 | **Validation** | Jakarta Bean Validation (backend) |
 | **Security** | CORS, Cloudflare CDN (Rate Limiting, Full Strict HTTPS) |
 | **CI/CD** | GitHub Actions, Dokploy |
-| **Deployment** | Docker, AWS EC2, Cloudflare CDN (Revese Proxy) |
-
-
+| **Deployment** | Docker, AWS EC2, Cloudflare CDN (Reverse Proxy) |
 
 ### Why These Technologies?
 
+- **Google Places API + TypeScript** — The best API for reliable and comprehensive data source with real-time information. TypeScript for type-safe scripts with Node.js and pnpm, along with fetch/PostgreSQL driver/Jest.
 
-- **Google Places API + Typescript** 
-— the best API for a reliable and very comprehensive data source with real time information and typescript for reliable Type safe scripts with Node.js and pnpm with fetch/postgreSQL driver/jest.
+- **PostgreSQL** — Production-grade relational database, easily upgradable via version schema migrations and usable for future client transactions. Better than SQLite for concurrent access.
 
-- **PostgreSQL** 
-— Production grade relational database easily upgradable by version schema migrations and usable for future client transactions, better than SQLite for concurrent access
+- **Spring Boot 4.0.6 + H2 + Maven + Docker** — Latest stable version with Java 21 support for stable and easily scalable dockerised APIs with OpenAPI documentation, dependencies, unit tests, and dev/production environments.
 
-- **Spring Boot 4.0.6 + H2 + Maven + Docker** 
-— Latest stable version with Java 21 support for stable and easily scalable dockerised API's with OpenAPI documentation, dependecies, Unit Tests and Dev/Prod Environements.
+- **React 19 + Tailwind CSS + TypeScript** — Type-safe frontend development and rapid UI development with modern React features, hooks, and fetch API. Trying to match pixel-to-pixel my UI/UX design.
 
-- **React 19 + Tailwind CSS + TypeScript** 
-— Type-safe frontend development and rapid UI development, modern React features, hooks, fetch API and trying to match pixel to pixel my UI/UX Design
+## Getting Started
 
+### Local Development (Without Live Database)
 
+The data collection pipeline requires a Google Console API Key and a PostgreSQL database. For this reason, we can run the API with pre-loaded salons locally.
 
-
-## 1- How to Run the Application for Local Developpement ( without Data Collection in a live database )
-
-
-The data collection pipeline requires a Google Console API Key and a PostgreSQL database for this reason we can run the API with pre loaded salons.
-
-
-### Quick Start (3 minutes)
+#### Quick Start (3 minutes)
 
 #### 1. Clone the repository
 
@@ -196,7 +163,6 @@ git clone https://github.com/anasmoumni51-stack/Warsaw-Accelerator-2026-Project.
 cd Warsaw-Accelerator-2026-Project
 ```
 
-
 #### 2. Backend API (with pre-seeded database)
 
 ```bash
@@ -204,9 +170,8 @@ cd salonapi
 ./mvnw spring-boot:run
 ```
 
-The API runs on http://localhost:8080 with an in-memory H2 database pre loaded with 5 salons.  
-Swagger UI available at http://localhost:8080/swagger for live API testing Locally or using Postman.
-
+The API runs on `http://localhost:8080` with an in-memory H2 database pre-loaded with 5 salons.
+Swagger UI available at `http://localhost:8080/swagger` for live API testing locally or using Postman.
 
 #### 3. Frontend
 
@@ -216,18 +181,13 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173 in your browser.
+Open `http://localhost:5173` in your browser.
 
+**That's it!** The frontend connects to the local backend by default.
 
-**That's it!** The frontend connects to the local backend by default and you will see 
+### Full Production Setup (With PostgreSQL)
 
-
-
-
-
-### 2- How to Run the Application with the Full Setup for Production (with PostgreSQL)
-
-If you want to use the data collection pipeline is usable :
+If you want to use the data collection pipeline:
 
 #### 1. Data Collection Pipeline
 
@@ -243,13 +203,13 @@ GOOGLE_API_KEY=your_google_places_api_key
 DATABASE_URL=postgresql://user:password@host:5432/salon_db
 ```
 
-Run the full pipeline ( automated migration and seeding and idempotent ( safe to run multiple times and doesn't change the database state unless new salons are found ) ):
+Run the full pipeline (automated migration and seeding, idempotent — safe to run multiple times and doesn't change the database state unless new salons are found):
 
 ```bash
 pnpm run start
 ```
 
-This fetches data from Google Places API, cleans it, resolves the photos to a CDN URL, migrates the database automatically then seeds the database with ~600 salons and the total count of rows returns 5 rows examples.
+This fetches data from Google Places API, cleans it, resolves photos to a CDN URL, migrates the database automatically, then seeds the database with ~600 salons. The total count of rows returns 5 example rows.
 
 
 **Pipeline stages:**
@@ -261,7 +221,6 @@ This fetches data from Google Places API, cleans it, resolves the photos to a CD
 6. `test-db` — shows database row count and displays seeded columns
 
 You can run stages individually: `pnpm run collect`, `pnpm run validate`, `pnpm run photos`, `pnpm run migrate`, `pnpm run seed`, `pnpm run test-db`
-
 
 #### 2. Backend API (with PostgreSQL)
 
@@ -283,17 +242,15 @@ Run with production profile:
 SPRING_PROFILES_ACTIVE=prod ./mvnw spring-boot:run
 ```
 
-API runs on http://localhost:8080
-Swagger UI available at http://localhost:8080/swagger
+API runs on `http://localhost:8080`
+Swagger UI available at `http://localhost:8080/swagger`
 
+CORS origins are configured via the `app.cors.origin` property, driven by the `CORS_ORIGIN` environment variable in production:
 
-CORS origins are configured via the app.cors.origin property, driven by the CORS_ORIGIN environment variable in production:
+- **Development:** Defaults to `*` (allows all origins)
+- **Production:** Set to your frontend domain (e.g., `https://salon-ui.technical-task.live`)
 
-Development: Defaults to * (allows all origins)
-Production: Set to your frontend domain (e.g., https://salon-ui.technical-task.live)
-The configuration is in Common/CorsConfig.java and reads app.cors.origin from the active Spring profile.
-
-
+The configuration is in `Common/CorsConfig.java` and reads `app.cors.origin` from the active Spring profile.
 
 #### 3. Frontend
 
@@ -315,12 +272,7 @@ npm run dev
 
 Frontend runs on http://localhost:5173
 
-
-
-
-## 3- OPTIONAL
-
-### Docker Deployment
+### Docker Deployment (Optional)
 
 #### Frontend
 
@@ -331,7 +283,6 @@ docker compose -f docker-compose-prod.yml up --build
 
 Frontend runs on http://localhost:3000
 
-
 #### Backend
 
 ```bash
@@ -341,21 +292,12 @@ docker compose -f docker-compose-prod.yml up --build
 
 API runs on http://localhost:8080
 
-
 **Note:** PostgreSQL is not included in the compose files. Use AWS RDS or a separate PostgreSQL instance.
 
 
+## Architecture Details
 
-
-
-
-
-
-## Architecture Details ( from data Collection until served on the Frontend using the REST API)
-
-
-
-### 1- Search Queries
+### Search Queries
 
 The collect script uses 17 search queries against Google Places API to maximize coverage across Warsaw:
 
@@ -388,9 +330,7 @@ The collect script uses 17 search queries against Google Places API to maximize 
 
 Queries are defined in `data-collection/src/utils/queries.ts`. Add new queries there to expand coverage (e.g., other cities in Poland).
 
-
-
-### 2- Data Pipeline Flow
+### Data Pipeline Flow
 
 ```
 Google Places API (17 queries × pagination)
@@ -421,10 +361,7 @@ Google Places API (17 queries × pagination)
 
 See [data-collection/README.md](data-collection/README.md) for detailed instructions and information.
 
-
-
-
-### 3 - Database Schema
+### Database Schema
 
 The database uses a normalized schema with a many-to-many relationship between salons and services.
 
@@ -468,11 +405,9 @@ CREATE TABLE salon_services (
 );
 ```
 
+### Data Model
 
-
-## 4- Data Model
-
-**Design Decision:** Many-to-many relationship, a salon can offer multiple services. ( Database schema easily extandable to multiple photos gallery table, reviews table, Client and user Profile Tables, Order table and favourites joined table  )
+**Design Decision:** Many-to-many relationship — a salon can offer multiple services. (Database schema easily extensible to multiple photos gallery table, reviews table, client and user profile tables, order table, and favourites joined table.)
 
 ```
 ┌──────────────────┐         ┌──────────────────────┐         ┌──────────────┐
@@ -503,16 +438,13 @@ CREATE TABLE salon_services (
 (RO) = read-only, populated by database/pipeline, not mapped for updates
 ```
 
-
 **Key Design Decisions:**
 - `UNIQUE (name_norm, address_norm)` prevents duplicate salons and keeps seed and migrate script idempotent
 - `name_norm` and `address_norm` are read-only fields (populated by pipeline, not mapped for updates)
-- `@EntityGraph and @BatchSize` used in Entity and repository queries to eagerly fetch services without N+1 queries and avoiding fetching all rows in java memory
+- `@EntityGraph` and `@BatchSize` used in entity and repository queries to eagerly fetch services without N+1 queries and avoid fetching all rows into Java memory
 - Schema managed by data collection pipeline (`migrate.ts`), not the backend
 
-
-
-## 5- REST API Endpoints
+## REST API Endpoints
 
 ### Salons
 
@@ -532,16 +464,15 @@ CREATE TABLE salon_services (
 - `sort` (optional): Sort field (rating, priceRange, name, reviewCount)
 - `orderBy` (optional): Sort direction (ASC, DESC, default: DESC)
 
-
 **Example Requests:**
 ```bash
 # Get all salons
 curl "http://localhost:8080/v1/salons?page=0&size=20"
 
-# Filter by district 
+# Filter by district
 curl "http://localhost:8080/v1/salons?district=Śródmieście"
 
-# Filter by service ( exactly as seeded in the database )
+# Filter by service (exactly as seeded in the database)
 curl "http://localhost:8080/v1/salons?service=Hair%20Styling"
 
 # Sort by rating (highest first)
@@ -565,8 +496,6 @@ The API uses standard HTTP status codes:
 | `405 Method Not Allowed` | Wrong HTTP method (e.g. POST on GET-only endpoint) | `ErrorDto` with error message |
 | `409 Conflict` | Duplicate constraint violation (name + address) | `ErrorDto` with conflict message |
 | `500 Internal Server Error` | Unexpected server error | `Map<String, Object>` with status, error, path |
-
-
 
 ## Testing
 
@@ -593,66 +522,40 @@ npm run lint        # ESLint checks
 npm run build       # Production build verification
 ```
 
-
-
-
 ## What I'd Improve With More Time
 
-Given the 4-8 hour time constraint, I focused on core functionality and data quality and a responsive UI. With more time, I would implement the following improvements:
-
+Given the 4-8 hour time constraint, I focused on core functionality, data quality, and a responsive UI. With more time, I would implement the following improvements:
 
 ### Data Pipeline Improvements
 
-  1- Adding a cron job to refresh salon data daily and expand to more data (opening hours, amenities and prices)
-
-  2- Adding an additional collect script to fetch more useful data.
-
-  3- Expand to other Polish cities (Kraków, Wrocław, Gdańsk) simply by adding more queries.
-
-  4- Only fetch changed data instead of full re-collection and API request optimisation.
-
-  5- Automated scheduled database backups to S3 easily done in Amazon AWS.
-
-  6- Better unit test coverage of the functionality of the pipeline.
-
+1. Adding a cron job to refresh salon data daily and expand to more data (opening hours, amenities, and prices)
+2. Adding an additional collect script to fetch more useful data
+3. Expand to other Polish cities (Kraków, Wrocław, Gdańsk) simply by adding more queries
+4. Only fetch changed data instead of full re-collection and API request optimisation
+5. Automated scheduled database backups to S3 (easily done in Amazon AWS)
+6. Better unit test coverage of the pipeline functionality
 
 ### Backend Improvements
 
-
-  1- Better cache Control and Implementing a Redis in-memory cache database to return cached resources to all users instead of database queries for each resource and in-memory rate limiting (currently implemented on the Cloudflare CDN layer)
-
-  2- Better query optimisation and if allowed expand the project to a new database schema with migrations while adding the following tables: User, Address, Profile, Photos, Reviews, Order and mapping relationships between entities to form favourites and detailed listings
-
-  3- Implement custom logging filters, better custom exception handling, secure HTTP headers and stricter input sanitization.
-
-  4- User authentication endpoints with a short-lived JWT token with role-based access authentication (User/Salon/Admin) and a cookie-based refresh token (HTTP only).
-
-  5- Implement PATCH for partial update and CREATE / DELETE secure endpoints while following REST conventions.
-
-  6- Adding Flyway migrations on the Spring level
-
-
+1. Better cache control and implementing a Redis in-memory cache database to return cached resources to all users instead of database queries for each resource, and in-memory rate limiting (currently implemented on the Cloudflare CDN layer)
+2. Better query optimisation and, if allowed, expand the project to a new database schema with migrations while adding the following tables: User, Address, Profile, Photos, Reviews, Order — and mapping relationships between entities to form favourites and detailed listings
+3. Implement custom logging filters, better custom exception handling, secure HTTP headers, and stricter input sanitization
+4. User authentication endpoints with a short-lived JWT token with role-based access authentication (User/Salon/Admin) and a cookie-based refresh token (HTTP only)
+5. Implement PATCH for partial update and CREATE/DELETE secure endpoints while following REST conventions
+6. Adding Flyway migrations on the Spring level
 
 ### Frontend Improvements
 
-  1- better filtering functionality and state management using a library like redux.
-
-  2- Polish language support since the data is Warsaw based.
-
-  2- Server-side text search or using PostgreSQL on salon name and address instead of client side filtering.
-
-  3- "Near me" sorting using the browser Geolocation API with the existing lat/lng data to sort salons by distance
-
-  6- Service worker for offline support to cache the last viewed salon list for low connection scenarios.
-
-  8- React error boundaries for better error handling instead of a blank screen on component crashes.
-
-
-
+1. Better filtering functionality and state management using a library like Redux
+2. Polish language support since the data is Warsaw-based
+3. Server-side text search or using PostgreSQL on salon name and address instead of client-side filtering
+4. "Near me" sorting using the browser Geolocation API with the existing lat/lng data to sort salons by distance
+5. Service worker for offline support to cache the last viewed salon list for low-connection scenarios
+6. React error boundaries for better error handling instead of a blank screen on component crashes
 
 
 ## API Documentation
 
 Interactive API documentation is available at:
-- **Production:** https://salon-api.technical-task.live/swagger
-- **Local:** http://localhost:8080/swagger
+- **Production:** `https://salon-api.technical-task.live/swagger`
+- **Local:** `http://localhost:8080/swagger`
