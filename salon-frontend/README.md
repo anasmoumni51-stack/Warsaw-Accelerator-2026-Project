@@ -71,11 +71,11 @@ salon-frontend/
 - URL state sync — filters, sort, and page persist in query params across refresh
 - Interactive Leaflet map with custom pink pin markers and fly-to animation
 - Salon detail page with full address, contact info, services, and location map
-- Inline edit mode — modify salon details and save changes to backend via PUT API
+- Inline edit mode — modify salon details and save changes to backend with API
 - Responsive layout (mobile, tablet, desktop with three-column view at 1400px+)
 - Mobile filter dialog with click-outside-to-close
-- Custom design system with Tailwind theme tokens
-- Accessibility: skip link, focus-visible rings, semantic HTML
+- Custom design system with Tailwind
+- Accessibility: skip link, focus-visible rings
 
 ## Quick Start
 

@@ -173,7 +173,7 @@ export default function HomePage({
             </div>
             <div
               ref={mapRef}
-              className="relative z-0 hidden min-[100px]:block w-full min-[1400px]:flex-1 min-[1400px]:min-w-0 h-[300px] min-[1400px]:h-full"
+              className="relative z-0 hidden min-[100px]:block w-full min-[1400px]:flex-1 min-[1400px]:min-w-0 h-[300px] min-[1400px]:h-full isolate"
             >
               <MapPanel
                 salons={filteredSalons}
