@@ -11,53 +11,53 @@ import lombok.Data;
 public class SalonDetailDTO {
 
     @Schema(description = "Unique salon identifier", example = "1")
-    Long id;
+    private Long id;
 
     @Schema(description = "Salon business name", example = "Beauty Studio")
-    String name;
+    private String name;
 
     @Schema(description = "Street address", example = "Marszałkowska 1")
-    String address;
+    private String address;
 
     @Schema(description = "Street number", example = "1", nullable = true)
-    String streetNumber;
+    private String streetNumber;
 
     @Schema(description = "Warsaw district", example = "Śródmieście")
-    String district;
+    private String district;
 
     @Schema(description = "City name", example = "Warszawa")
-    String city;
+    private String city;
 
     @Schema(description = "Country name", example = "Poland")
-    String country;
+    private String country;
 
     @Schema(description = "Postal code", example = "00-001")
-    String postcode;
+    private String postcode;
 
     @Schema(description = "Phone number with country code", example = "+48 111 222 333", nullable = true)
-    String phone;
+    private String phone;
 
     @Schema(description = "Business website URL", example = "https://beautystudio.pl", nullable = true)
-    String website;
+    private String website;
 
     @ArraySchema(schema = @Schema(description = "Service offered", example = "Hair Styling"))
-    List<String> services;
+    private List<String> services;
 
     @Schema(description = "Price range category (zł, zł zł, or zł zł zł)", example = "zł zł")
-    String priceRange;
+    private String priceRange;
 
     @Schema(description = "Average rating (0-5 scale)", example = "4.8")
-    BigDecimal rating;
+    private BigDecimal rating;
 
     @Schema(description = "Number of customer reviews", example = "156")
-    Integer reviewCount;
+    private Integer reviewCount;
 
     @Schema(description = "Salon cover image URL", example = "https://lh3.googleusercontent.com/...", nullable = true)
-    String imageUrl;
+    private String imageUrl;
 
     @Schema(description = "Latitude coordinate", example = "52.2297", nullable = true)
-    Double lat;
+    private Double lat;
 
     @Schema(description = "Longitude coordinate", example = "21.0122", nullable = true)
-    Double lng;
+    private Double lng;
 }

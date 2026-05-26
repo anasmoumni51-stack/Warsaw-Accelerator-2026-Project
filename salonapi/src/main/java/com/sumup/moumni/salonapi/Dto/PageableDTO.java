@@ -12,7 +12,7 @@ public class PageableDTO {
 
     @Schema(description = "Page number (zero-based)", example = "0")
     @Min(value = 0, message = "Page must be at least 0")
-    @Max(value = 200, message = "Page must be at most 200")
+    @Max(value = 500, message = "Page must be at most 500")
     private int page = 0;
 
     @Schema(description = "Page size (1-100)", example = "20")
