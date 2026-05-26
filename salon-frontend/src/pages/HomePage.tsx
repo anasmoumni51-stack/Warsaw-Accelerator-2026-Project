@@ -201,6 +201,7 @@ export default function HomePage({
             onFilterChange={setFilters}
             resultCount={filteredSalons.length}
             mobile
+            onApply={handleCloseFilters}
           />
         </DialogBody>
       </Dialog>

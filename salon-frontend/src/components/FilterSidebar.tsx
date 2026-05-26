@@ -52,9 +52,10 @@ interface FilterSidebarProps {
   onFilterChange: (filters: FilterState) => void
   resultCount?: number
   mobile?: boolean
+  onApply?: () => void
 }
 
-export default function FilterSidebar({ filters, onFilterChange, resultCount = 0, mobile = false }: FilterSidebarProps) {
+export default function FilterSidebar({ filters, onFilterChange, resultCount = 0, mobile = false, onApply }: FilterSidebarProps) {
   const priceStyle = (() => {
     const min = filters.priceMin || 1
     const max = filters.priceMax || 3
@@ -258,6 +259,7 @@ export default function FilterSidebar({ filters, onFilterChange, resultCount = 0
         </FilterSection>
 
         <button
+          onClick={onApply}
           className="w-full h-[44px] bg-primary hover:bg-primary-hover text-white rounded-[8px] font-display text-[14px] font-semibold cursor-pointer transition-colors duration-200 mt-6"
         >
           Show {resultCount} salons
